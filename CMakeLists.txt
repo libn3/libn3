@@ -8,6 +8,10 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    message(FATAL_ERROR "libn3 only supports Linux")
+endif()
+
 # DO NOT ADD ADDRESS SANITIZER TO THE COMPILE FLAGS
 # SDL and OpenGL causes tons of errors
 # We suppress them with a static valgrind log file, which can't be done with ASan
