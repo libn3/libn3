@@ -39,6 +39,7 @@ add_definitions(-D_DEFAULT_SOURCE)
 
 SET(COMMON
     "src/libn3.cpp"
+    "src/epoll.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS
@@ -47,7 +48,7 @@ SET(COMMON_INCLUDE_DIRS
 
 find_package(Threads REQUIRED)
 
-add_library(brrr-common OBJECT ${COMMON})
-target_include_directories(brrr-common PUBLIC ${COMMON_INCLUDE_DIRS})
+add_library(libn3 OBJECT ${COMMON})
+target_include_directories(libn3 PUBLIC ${COMMON_INCLUDE_DIRS})
 
-set_property(TARGET brrr-common PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+set_property(TARGET libn3 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
