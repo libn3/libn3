@@ -29,13 +29,14 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
 
 const std::expected<void, error::code> epoll_ctx::add(const int fd) noexcept {
     struct epoll_event event {
-        .events = (EPOLLIN | EPOLLOUT | EPOLLET), .data{.ptr = nullptr},
+        .events = (EPOLLIN | EPOLLOUT | EPOLLET), .data{.ptr = this},
     };
 
     const auto ret = epoll_ctl(this->efd.efd, EPOLL_CTL_ADD, fd, &event);
     if (ret == -1) {
         return std::unexpected(error::code::TEST);
     }
+    this->descriptors.emplace_back(fd);
     return {};
 }
 
