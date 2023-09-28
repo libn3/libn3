@@ -16,6 +16,12 @@ public:
 
     epoll_handle();
     ~epoll_handle() noexcept;
+
+    epoll_handle(const epoll_handle&) = delete;
+    epoll_handle(epoll_handle&&) = default;
+
+    epoll_handle& operator=(const epoll_handle&) = delete;
+    epoll_handle& operator=(epoll_handle&&) = default;
 };
 
 class epoll_ctx {
@@ -27,6 +33,8 @@ class epoll_ctx {
 
 public:
     epoll_ctx();
+    epoll_ctx(const epoll_ctx&) = default;
+    epoll_ctx(epoll_ctx&&) = default;
 
     const std::expected<void, error::code> add(const int fd) noexcept;
 };
