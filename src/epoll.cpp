@@ -28,11 +28,9 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
 }
 
 const std::expected<void, error::code> epoll_ctx::add(const int fd) noexcept {
-    struct epoll_event event;
-    //memset(&event, 0, sizeof(event));
-
-    event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-    event.data.ptr = nullptr;
+    struct epoll_event event {
+        .events = (EPOLLIN | EPOLLOUT | EPOLLET), .data{.ptr = nullptr},
+    };
 
     const auto ret = epoll_ctl(this->efd.efd, EPOLL_CTL_ADD, fd, &event);
     if (ret == -1) {
