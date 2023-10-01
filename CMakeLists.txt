@@ -45,6 +45,7 @@ add_definitions(-D_DEFAULT_SOURCE)
 SET(COMMON
     "src/libn3.cpp"
     "src/epoll.cpp"
+    "src/error.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS

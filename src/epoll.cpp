@@ -39,7 +39,7 @@ namespace n3 { namespace epoll {
 
         const auto ret = epoll_ctl(this->efd.efd, EPOLL_CTL_ADD, fd, &event);
         if (ret == -1) {
-            return std::unexpected(n3::error::code::TEST);
+            return std::unexpected(error::get_error_code_from_errno(errno));
         }
         this->descriptors.emplace_back(fd);
         return {};
@@ -49,7 +49,7 @@ namespace n3 { namespace epoll {
             -> const std::expected<void, error::code> {
         const auto ret = epoll_ctl(this->efd.efd, EPOLL_CTL_DEL, fd, nullptr);
         if (ret == -1) {
-            return std::unexpected(n3::error::code::TEST);
+            return std::unexpected(error::get_error_code_from_errno(errno));
         }
         this->descriptors.emplace_back(fd);
         return {};
@@ -60,11 +60,11 @@ namespace n3 { namespace epoll {
         //TODO: Currently no timeout is set
         const auto ret = epoll_wait(this->efd.efd, this->events.data(), this->events.size(), 0);
         if (ret == -1) {
-            return std::unexpected(n3::error::code::TEST);
+            return std::unexpected(error::get_error_code_from_errno(errno));
         }
         if (ret == 0) {
             //Timeout
-            return std::unexpected(n3::error::code::TEST);
+            return std::unexpected(error::get_error_code_from_errno(ETIMEDOUT));
         }
         assert(ret > 0 && static_cast<decltype(this->events.size())>(ret) <= this->events.size());
 
