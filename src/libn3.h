@@ -1,5 +1,8 @@
 #pragma once
 
-namespace ns {
-#include "epoll.h"
+namespace n3 {
+    //Currently unused
 }
+
+#include "epoll.h"
+

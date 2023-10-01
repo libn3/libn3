@@ -12,10 +12,15 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     message(FATAL_ERROR "libn3 only supports Linux")
 endif()
 
+# TODO: Static vs shared libraries
+# TODO: Autodetection/messaging around PIE, LTO, and other features
+# TODO: Feature flags
+# TODO: Configuration options (tweaking internal static cache sizes, epoll vs io_uring, etc)
+
 # DO NOT ADD ADDRESS SANITIZER TO THE COMPILE FLAGS
 # SDL and OpenGL causes tons of errors
 # We suppress them with a static valgrind log file, which can't be done with ASan
-set(CMAKE_C_FLAGS "-Wall -Wextra")
+set(CMAKE_C_FLAGS "-Wall -Wextra -Wshadow -Wpedantic")
 # TSan doesn't play well with Valgrind, need to pick and choose
 #set(CMAKE_C_FLAGS_DEBUG "-g -O0 -fsanitize=thread -fno-omit-frame-pointer")
 set(CMAKE_C_FLAGS_DEBUG "-g -O0 -fno-omit-frame-pointer")
@@ -48,7 +53,8 @@ SET(COMMON_INCLUDE_DIRS
 
 find_package(Threads REQUIRED)
 
-add_library(libn3 OBJECT ${COMMON})
+add_library(libn3 SHARED ${COMMON})
 target_include_directories(libn3 PUBLIC ${COMMON_INCLUDE_DIRS})
 
 set_property(TARGET libn3 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+set_property(TARGET libn3 PROPERTY POSITION_INDEPENDENT_CODE TRUE)
