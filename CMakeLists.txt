@@ -46,6 +46,8 @@ SET(COMMON
     "src/libn3.cpp"
     "src/epoll.cpp"
     "src/error.cpp"
+    "src/tcp.cpp"
+    "src/socket.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS

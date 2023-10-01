@@ -4,6 +4,7 @@
 #include <span>
 #include <sys/epoll.h>
 #include <system_error>
+#include <expected>
 #include <unistd.h>
 #include <utility>
 #include <vector>
@@ -16,8 +17,7 @@ namespace n3 { namespace epoll {
 
     epoll_handle::epoll_handle() : efd(epoll_create1(EPOLL_CLOEXEC)) {
         if (this->efd == -1) {
-            //TODO: I don't like this pattern, need to think more about error code design
-            throw std::system_error(errno, std::generic_category(), "epoll_create1");
+            throw error::get_error_code_from_errno(errno);
         }
     }
 
