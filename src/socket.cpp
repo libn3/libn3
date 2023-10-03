@@ -158,6 +158,45 @@ namespace n3 { namespace net { namespace linux {
                     }
                 }();
             case IPPROTO_TCP:
+                return [=] [[nodiscard]] {
+                    switch (optname) {
+                        case TCP_CONGESTION:
+                            /*
+                             * Returns a string, with no mention of possible options or a max size
+                             * Best I could find is the following list from wikipedia
+                             *
+                             * https://en.wikipedia.org/wiki/TCP_congestion_control#Linux_usage
+                             *
+                             * BIC is used by default in Linux kernels 2.6.8 through 2.6.18. (August 2004 – September 2006)
+                             * CUBIC is used by default in Linux kernels since version 2.6.19. (November 2006)
+                             * PRR is incorporated in Linux kernels to improve loss recovery since version 3.2. (January 2012)
+                             * BBRv1 is incorporated in Linux kernels to enable model-based congestion control since version 4.9. (December 2016)
+                             *
+                             * So we'll go with 5 characters to match the longest known
+                             */
+                            return 5 * sizeof(unsigned char);
+                        case TCP_INFO:
+                            return sizeof(struct tcp_info);
+                        case TCP_USER_TIMEOUT:
+                            return sizeof(unsigned int);
+                        case TCP_CORK:
+                        case TCP_DEFER_ACCEPT:
+                        case TCP_KEEPCNT:
+                        case TCP_KEEPIDLE:
+                        case TCP_KEEPINTVL:
+                        case TCP_LINGER2:
+                        case TCP_MAXSEG:
+                        case TCP_NODELAY:
+                        case TCP_QUICKACK:
+                        case TCP_SYNCNT:
+                        case TCP_WINDOW_CLAMP:
+                        case TCP_FASTOPEN:
+                        case TCP_FASTOPEN_CONNECT:
+                            return sizeof(int);
+                        default:
+                            std::unreachable();
+                    }
+                }();
                 break;
             case IPPROTO_UDP:
                 break;
