@@ -11,7 +11,7 @@ namespace n3 { namespace net { namespace linux {
 
     class socket {
 
-        [[nodiscard]] constexpr size_t get_sockopt_size(int level, int optname) const noexcept;
+        [[nodiscard]] static constexpr size_t get_sockopt_size(int level, int optname) noexcept;
 
     public:
         const int sock;

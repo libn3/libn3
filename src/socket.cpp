@@ -45,7 +45,7 @@ namespace n3 { namespace net { namespace linux {
     }
 
     //TODO: Probably need to enum and error check this to prevent misuse on all possible ints
-    [[nodiscard]] constexpr size_t socket::get_sockopt_size(int level, int optname) const noexcept {
+    [[nodiscard]] constexpr size_t socket::get_sockopt_size(int level, int optname) noexcept {
         switch (level) {
             case SOL_SOCKET:
                 static_assert(SOL_SOCKET == IPPROTO_ICMP);
