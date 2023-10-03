@@ -5,12 +5,13 @@
 #include <linux/filter.h>
 #include <linux/icmp.h>
 #include <linux/in.h>
+#include <linux/in6.h>
 #include <linux/ip.h>
+#include <linux/ipv6.h>
 #include <linux/socket.h>
 #include <linux/tcp.h>
 #include <linux/udp.h>
 #include <netdb.h>
-#include <netinet/in.h>
 #include <span>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -235,7 +236,56 @@ namespace n3 { namespace net { namespace linux {
                     }
                 }();
             case IPPROTO_IPV6:
-                break;
+                return [=] [[nodiscard]] {
+                    switch (optname) {
+                        case IPV6_ADDRFORM:
+                            //Pointer to integer
+                            return sizeof(int *);
+                        case IPV6_ADD_MEMBERSHIP:
+                            [[fallthrough]];
+                        case IPV6_DROP_MEMBERSHIP:
+                            return sizeof(struct ipv6_mreq);
+                        case IPV6_MTU:
+                            //getsockopt returns an integer
+                            //setsockopt expects a pointer to an integer
+                            return ((sizeof(int) >= sizeof(int *)) ? sizeof(int) : sizeof(int *));
+                        case IPV6_MTU_DISCOVER:
+                            return sizeof(int);
+                        case IPV6_MULTICAST_HOPS:
+                            return sizeof(int *);
+                        case IPV6_MULTICAST_IF:
+                            return sizeof(int *);
+                        case IPV6_MULTICAST_LOOP:
+                            //Pointer to a bool as an int! How exciting!
+                            return sizeof(int *);
+                        case IPV6_RECVPKTINFO:
+                            //Pointer to a bool as an int! How exciting!
+                            return sizeof(int *);
+                        case IPV6_RTHDR:
+                            [[fallthrough]];
+                        case IPV6_AUTHHDR:
+                            [[fallthrough]];
+                        case IPV6_DSTOPTS:
+                            [[fallthrough]];
+                        case IPV6_HOPOPTS:
+                            [[fallthrough]];
+                        case IPV6_HOPLIMIT:
+                            //Pointer to a bool as an int! How exciting!
+                            return sizeof(int *);
+                        case IPV6_RECVERR:
+                            //Pointer to a bool as an int! How exciting!
+                            return sizeof(int *);
+                        case IPV6_ROUTER_ALERT:
+                            return sizeof(int *);
+                        case IPV6_UNICAST_HOPS:
+                            return sizeof(int *);
+                        case IPV6_V6ONLY:
+                            //Pointer to a bool as an int! How exciting!
+                            return sizeof(int *);
+                        default:
+                            std::unreachable();
+                    }
+                }();
             case IPPROTO_RAW:
                 return [=] [[nodiscard]] {
                     switch (optname) {
