@@ -7,9 +7,10 @@
 #include <linux/in.h>
 #include <linux/ip.h>
 #include <linux/socket.h>
+#include <linux/tcp.h>
+#include <linux/udp.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <span>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -42,6 +43,7 @@ namespace n3 { namespace net { namespace linux {
         close(this->sock);
     }
 
+    //TODO: Probably need to enum and error check this to prevent misuse on all possible ints
     [[nodiscard]] constexpr size_t socket::get_sockopt_size(int level, int optname) const noexcept {
         switch (level) {
             case SOL_SOCKET:
@@ -145,7 +147,93 @@ namespace n3 { namespace net { namespace linux {
                     }
                 }();
             case IPPROTO_IP:
-                break;
+                return [=] [[nodiscard]] {
+                    switch (optname) {
+                        case IP_ADD_MEMBERSHIP:
+                            [[fallthrough]];
+                        case IP_BLOCK_SOURCE:
+                            [[fallthrough]];
+                        case IP_DROP_MEMBERSHIP:
+                            [[fallthrough]];
+                        case IP_DROP_SOURCE_MEMBERSHIP:
+                            return sizeof(struct ip_mreqn);
+                        case IP_ADD_SOURCE_MEMBERSHIP:
+                            return sizeof(struct ip_mreq_source);
+                        case IP_BIND_ADDRESS_NO_PORT:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_FREEBIND:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_HDRINCL:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_LOCAL_PORT_RANGE:
+                            return sizeof(uint32_t);
+                        case IP_MSFILTER:
+                            return sizeof(struct ip_msfilter);
+                        case IP_MTU:
+                            return sizeof(int);
+                        case IP_MTU_DISCOVER:
+                            return sizeof(int);
+                        case IP_MULTICAST_ALL:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_MULTICAST_IF:
+                            return sizeof(struct ip_mreqn);
+                        case IP_MULTICAST_LOOP:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_MULTICAST_TTL:
+                            return sizeof(int);
+                        case IP_NODEFRAG:
+                            return sizeof(int);
+                        case IP_OPTIONS:
+                            //Maximum option size for IPv4 packets
+                            return 40uz;
+                        case IP_PASSSEC:
+                            //Not supported
+                            std::unreachable();
+                        case IP_PKTINFO:
+                            return sizeof(struct in_pktinfo);
+                        case IP_RECVERR:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_RECVOPTS:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_RECVORIGDSTADDR:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_RECVTOS:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_RECVTTL:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_RETOPTS:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_ROUTER_ALERT:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_TOS:
+                            //TOS is 1 byte
+                            return 1uz;
+                        case IP_TRANSPARENT:
+                            //C style "int as bool" semantics
+                            return sizeof(int);
+                        case IP_TTL:
+                            return sizeof(int);
+                        case IP_UNBLOCK_SOURCE:
+                            return sizeof(struct ip_mreq_source);
+                        case SO_PEERSEC:
+                            //Not supported
+                            std::unreachable();
+                        default:
+                            std::unreachable();
+                    }
+                }();
             case IPPROTO_IPV6:
                 break;
             case IPPROTO_RAW:
@@ -197,9 +285,19 @@ namespace n3 { namespace net { namespace linux {
                             std::unreachable();
                     }
                 }();
-                break;
             case IPPROTO_UDP:
-                break;
+                return [=] [[nodiscard]] {
+                    switch (optname) {
+                        case UDP_CORK:
+                            return sizeof(int);
+                        case UDP_SEGMENT:
+                            return sizeof(int);
+                        case UDP_GRO:
+                            return sizeof(int);
+                        default:
+                            std::unreachable();
+                    }
+                }();
             default:
                 std::unreachable();
         }
