@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <cassert>
 #include <cstdint>
 #include <expected>
 #include <fcntl.h>
@@ -354,24 +355,30 @@ namespace n3 { namespace net { namespace linux {
         return 0;
     }
 
-    //std::expected<void, error::code> socket::setsockopt(const int level,
-    //        const int option,
-    //        const std::span<std::byte> option_value) const noexcept {
-    //    const auto ret = ::setsockopt(
-    //            this->sock, level, option, option_value.data(), option_value.size_bytes());
-    //    if (ret == -1) {
-    //        return std::unexpected(error::get_error_code_from_errno(errno));
-    //    }
-    //    return {};
-    //}
+    std::expected<void, error::code> socket::setsockopt(const int level,
+            const int option,
+            const std::span<std::byte> option_value) const noexcept {
+        const auto ret = ::setsockopt(
+                this->sock, level, option, option_value.data(), option_value.size_bytes());
+        if (ret == -1) {
+            return std::unexpected(error::get_error_code_from_errno(errno));
+        }
+        return {};
+    }
 
-    //std::expected<std::vector<std::byte>, error::code> socket::getsockopt(
-    //        const int level, const int option) const noexcept {
-    //    const auto ret = ::setsockopt(
-    //            this->sock, level, option, option_value.data(), option_value.size_bytes());
-    //    if (ret == -1) {
-    //        return std::unexpected(error::get_error_code_from_errno(errno));
-    //    }
-    //    return {};
-    //}
+    std::expected<std::span<std::byte>, error::code> socket::getsockopt(const int level,
+            const int option,
+            const std::span<std::byte> option_buf) const noexcept {
+        if (option_buf.size_bytes() < socket::get_sockopt_size(level, option)) {
+            return std::unexpected(error::code::invalid_argument);
+        }
+
+        socklen_t optlen = 0;
+        const auto ret = ::getsockopt(this->sock, level, option, option_buf.data(), &optlen);
+        if (ret == -1) {
+            return std::unexpected(error::get_error_code_from_errno(errno));
+        }
+        assert(optlen <= option_buf.size_bytes());
+        return option_buf.first(optlen);
+    }
 }}} // namespace n3::net::linux
