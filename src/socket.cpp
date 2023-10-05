@@ -381,4 +381,23 @@ namespace n3 { namespace net { namespace linux {
         assert(optlen <= option_buf.size_bytes());
         return option_buf.first(optlen);
     }
+
+    std::expected<size_t, error::code> socket::write_vectored(
+            const std::span<const std::span<std::byte>> bufs) const noexcept {
+        const auto ret = writev(this->sock, level, option, option_buf.data(), &optlen);
+        if (ret == -1) {
+            return std::unexpected(error::get_error_code_from_errno(errno));
+        }
+        assert(optlen <= option_buf.size_bytes());
+        return option_buf.first(optlen);
+    }
+
+    std::expected<size_t, error::code> socket::send(const std::span<std::byte> buf) const noexcept {
+        const auto buf_vec = std::span<const std::span<std::byte>, 1>{&buf, 1zu};
+        return write_vectored(std::move(buf_vec));
+    }
+    std::expected<size_t, error::code> socket::send(
+            const std::span<std::span<std::byte>> bufs) const noexcept {
+        return write_vectored(bufs);
+    }
 }}} // namespace n3::net::linux

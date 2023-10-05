@@ -48,6 +48,7 @@ SET(COMMON
     "src/error.cpp"
     "src/tcp.cpp"
     "src/socket.cpp"
+    "src/buffer.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS
