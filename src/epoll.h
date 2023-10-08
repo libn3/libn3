@@ -1,8 +1,10 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <expected>
 #include <memory>
+#include <optional>
 #include <span>
 #include <sys/epoll.h>
 #include <vector>
@@ -44,7 +46,7 @@ namespace n3 { namespace epoll {
         [[nodiscard]] auto add(const int fd) noexcept -> const std::expected<void, error::code>;
         [[nodiscard]] auto remove(const int fd) noexcept -> const std::expected<void, error::code>;
         //TODO: Wrap the raw epoll_event struct into my own type?
-        [[nodiscard]] auto wait() noexcept
+        [[nodiscard]] auto wait(const std::optional<std::chrono::milliseconds>& timeout_ms) noexcept
                 -> const std::expected<std::span<struct epoll_event>, error::code>;
     };
 

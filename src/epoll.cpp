@@ -1,10 +1,12 @@
 #include <cassert>
 #include <cerrno>
+#include <chrono>
+#include <expected>
 #include <memory>
+#include <optional>
 #include <span>
 #include <sys/epoll.h>
 #include <system_error>
-#include <expected>
 #include <unistd.h>
 #include <utility>
 #include <vector>
@@ -55,10 +57,13 @@ namespace n3 { namespace epoll {
         return {};
     }
 
-    [[nodiscard]] auto epoll_ctx::wait() noexcept
+    [[nodiscard]] auto epoll_ctx::wait(
+            const std::optional<std::chrono::milliseconds>& timeout_ms) noexcept
             -> const std::expected<std::span<struct epoll_event>, error::code> {
-        //TODO: Currently no timeout is set
-        const auto ret = epoll_wait(this->efd.efd, this->events.data(), this->events.size(), 0);
+        //Zero will block forever if the timeout optional is empty
+        const int epoll_timeout = timeout_ms.value_or(std::chrono::milliseconds{0}).count();
+        const auto ret = epoll_wait(
+                this->efd.efd, this->events.data(), this->events.size(), epoll_timeout);
         if (ret == -1) {
             return std::unexpected(error::get_error_code_from_errno(errno));
         }
