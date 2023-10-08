@@ -45,6 +45,7 @@ add_definitions(-D_DEFAULT_SOURCE)
 SET(COMMON
     "src/libn3.cpp"
     "src/epoll.cpp"
+    "src/epoll_executor.cpp"
     "src/error.cpp"
     "src/tcp.cpp"
     "src/socket.cpp"
