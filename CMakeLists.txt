@@ -50,6 +50,7 @@ SET(COMMON
     "src/tcp.cpp"
     "src/socket.cpp"
     "src/buffer.cpp"
+    "src/syscalls.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS

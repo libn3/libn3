@@ -12,7 +12,7 @@
 
 namespace n3 { namespace net { namespace linux { namespace tcp {
 
-    class socket : public n3::net::linux::socket<int> {
+    class socket : public n3::net::linux::socket {
     public:
         socket() = default;
         socket(const std::string_view ip_str, const std::string_view port_str);
