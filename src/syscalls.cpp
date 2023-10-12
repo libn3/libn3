@@ -369,4 +369,44 @@ namespace n3 { namespace linux {
         return option_buf.first(optlen);
     }
 
+    std::expected<size_t, error::code> readv(
+            const int fd, std::span<std::span<std::byte>> bufs) noexcept {
+        //Validate assumption about the length of the caller
+        assert(bufs.size() <= IOV_MAX);
+
+        std::array<struct iovec, IOV_MAX> converted_bufs;
+        //Convert spans to iovecs by copying to a stack buffer
+        //There's probably a way of converting things without a copy...
+        std::transform(bufs.cbegin(), bufs.cend(), converted_bufs.begin(), [](const auto vec) {
+            return iovec{.iov_base = vec.data(), .iov_len = vec.size_bytes()};
+        });
+
+        const auto ret = readv(fd, converted_bufs.data(), bufs.size());
+        if (ret == -1) {
+            return std::unexpected(error::get_error_code_from_errno(errno));
+        }
+        assert(ret >= 0);
+        return ret;
+    }
+
+    std::expected<size_t, error::code> writev(
+            const int fd, std::span<std::span<std::byte>> bufs) noexcept {
+        //Validate assumption about the length of the caller
+        assert(bufs.size() <= IOV_MAX);
+
+        std::array<struct iovec, IOV_MAX> converted_bufs;
+        //Convert spans to iovecs by copying to a stack buffer
+        //There's probably a way of converting things without a copy...
+        std::transform(bufs.cbegin(), bufs.cend(), converted_bufs.begin(), [](const auto vec) {
+            return iovec{.iov_base = vec.data(), .iov_len = vec.size_bytes()};
+        });
+
+        const auto ret = writev(fd, converted_bufs.data(), bufs.size());
+        if (ret == -1) {
+            return std::unexpected(error::get_error_code_from_errno(errno));
+        }
+        assert(ret >= 0);
+        return ret;
+    }
+
 }} // namespace n3::linux
