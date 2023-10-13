@@ -9,7 +9,11 @@
 #include <utility>
 #include <vector>
 
-namespace ns {
+namespace n3 {
+
+/*
+ * TODO: ConstRefBuffer et al to explicitly have std::span<const std::byte>?
+ */
 
 template<typename T, typename... Args>
 concept NoThrowConstructible
@@ -53,11 +57,16 @@ public:
             data{static_cast<std::byte *>(iov.iov_base), iov.iov_len} {
     }
 
-    [[nodiscard]] constexpr auto as_iovec() noexcept -> struct iovec {
+    [[nodiscard]] constexpr auto as_iovec() const noexcept -> struct iovec {
         return {
                 .iov_base = this->data.data(),
                 .iov_len = this->data.size_bytes(),
         };
+    }
+
+    [[nodiscard]] constexpr auto
+            as_span() const noexcept -> std::span<std::byte> {
+        return data;
     }
 
     constexpr std::byte& operator[](size_t idx) const noexcept {
@@ -116,4 +125,4 @@ static_assert(std::is_nothrow_move_assignable_v<RefMultiBuffer<IOV_MAX>>);
 //TODO: This may be useful as an optimization, std::span equivalent with std::byte* didn't work
 static_assert(std::is_layout_compatible_v<struct iovec, std::pair<void *, size_t>>);
 
-} // namespace ns
+} // namespace n3

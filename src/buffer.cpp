@@ -5,7 +5,7 @@
 
 #include "buffer.h"
 
-namespace ns {
+namespace n3 {
 
 OwningBuffer::OwningBuffer() : data{} {
 }
@@ -15,4 +15,4 @@ OwningBuffer::OwningBuffer(std::span<std::byte> init_data) :
 OwningBuffer::OwningBuffer(std::vector<std::byte>&& init_data) : data{init_data} {
 }
 
-} // namespace ns
+} // namespace n3

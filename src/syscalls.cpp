@@ -31,7 +31,7 @@
 namespace n3 { namespace linux {
 
     //TODO: Probably need to enum and error check this to prevent misuse on all possible ints
-    [[nodiscard]] constexpr size_t get_sockopt_size(int level, int optname) noexcept {
+    [[nodiscard]] constexpr size_t get_sockopt_size(const int level, const int optname) noexcept {
         switch (level) {
             case SOL_SOCKET:
                 static_assert(SOL_SOCKET == IPPROTO_ICMP);
@@ -343,9 +343,12 @@ namespace n3 { namespace linux {
     std::expected<void, error::code> setsockopt(const int sock,
             const int level,
             const int option,
-            const std::span<std::byte> option_value) noexcept {
-        const auto ret
-                = ::setsockopt(sock, level, option, option_value.data(), option_value.size_bytes());
+            const RefBuffer option_value) noexcept {
+        const auto ret = ::setsockopt(sock,
+                level,
+                option,
+                option_value.as_span().data(),
+                option_value.as_span().size_bytes());
         if (ret == -1) {
             return std::unexpected(error::get_error_code_from_errno(errno));
         }
@@ -355,18 +358,18 @@ namespace n3 { namespace linux {
     std::expected<std::span<std::byte>, error::code> getsockopt(const int sock,
             const int level,
             const int option,
-            const std::span<std::byte> option_buf) noexcept {
-        if (option_buf.size_bytes() < get_sockopt_size(level, option)) {
+            const RefBuffer option_buf) noexcept {
+        if (option_buf.as_span().size_bytes() < get_sockopt_size(level, option)) {
             return std::unexpected(error::code::invalid_argument);
         }
 
         socklen_t optlen = 0;
-        const auto ret = ::getsockopt(sock, level, option, option_buf.data(), &optlen);
+        const auto ret = ::getsockopt(sock, level, option, option_buf.as_span().data(), &optlen);
         if (ret == -1) {
             return std::unexpected(error::get_error_code_from_errno(errno));
         }
-        assert(optlen <= option_buf.size_bytes());
-        return option_buf.first(optlen);
+        assert(optlen <= option_buf.as_span().size_bytes());
+        return option_buf.as_span().first(optlen);
     }
 
     std::expected<size_t, error::code> readv(
@@ -406,6 +409,15 @@ namespace n3 { namespace linux {
             return std::unexpected(error::get_error_code_from_errno(errno));
         }
         assert(ret >= 0);
+        return ret;
+    }
+
+    std::expected<size_t, error::code> send(
+            const int sock, const RefBuffer buf, const int flags) noexcept {
+        const auto ret = ::send(sock, buf.as_span().data(), buf.as_span().size_bytes(), flags);
+        if (ret == -1) {
+            return std::unexpected(error::get_error_code_from_errno(errno));
+        }
         return ret;
     }
 
