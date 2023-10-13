@@ -41,6 +41,12 @@ public:
             data{std::forward<decltype(sp)>(std::as_writable_bytes(sp))} {
     }
 
+    //Constructor for arbitrary type pointers which can always be aliased by std::byte
+    template<typename T>
+    RefBuffer(T *const buf, const size_t len) noexcept :
+            data{reinterpret_cast<std::byte *>(buf), len} {
+    }
+
     //Constructor for iovecs which are basically just a span of bytes
     RefBuffer(const struct iovec iov) noexcept :
             data{static_cast<std::byte *>(iov.iov_base), iov.iov_len} {
