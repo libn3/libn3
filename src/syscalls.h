@@ -2,6 +2,7 @@
 
 #include <expected>
 #include <span>
+#include <sys/socket.h>
 
 #include "buffer.h"
 #include "error.h"
@@ -26,6 +27,12 @@ namespace n3 { namespace linux {
 
     std::expected<size_t, error::code> send(
             const int sock, const RefBuffer buf, const int flags) noexcept;
-    //std::expected<size_t, error::code> sendto(const int sockfd, const RefBuffer, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
+
+    //TODO: Enumerate the different sockaddr formats and sizes
+    //std::expected<size_t, error::code> sendto(const int sockfd,
+    //        const RefBuffer,
+    //        const int flags,
+    //        const struct sockaddr_storage *dest_addr,
+    //        socklen_t addrlen) noexcept;
     //std::expected<size_t, error::code> sendmsg(const int sockfd, const struct msghdr *msg, int flags);
 }} // namespace n3::linux
