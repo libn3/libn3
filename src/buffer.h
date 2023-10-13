@@ -113,4 +113,7 @@ static_assert(std::is_nothrow_move_constructible_v<RefMultiBuffer<IOV_MAX>>);
 static_assert(std::is_nothrow_copy_assignable_v<RefMultiBuffer<IOV_MAX>>);
 static_assert(std::is_nothrow_move_assignable_v<RefMultiBuffer<IOV_MAX>>);
 
+//TODO: This may be useful as an optimization, std::span equivalent with std::byte* didn't work
+static_assert(std::is_layout_compatible_v<struct iovec, std::pair<void *, size_t>>);
+
 } // namespace ns
