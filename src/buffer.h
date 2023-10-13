@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <concepts>
 #include <memory>
 #include <span>
@@ -58,6 +59,11 @@ public:
                 .iov_len = this->data.size_bytes(),
         };
     }
+
+    constexpr std::byte& operator[](size_t idx) const noexcept {
+        assert(idx <= data.size_bytes());
+        return data[idx];
+    }
 };
 
 //Compiler errors to make sure a RefBuffer is as trivial as it should be
@@ -85,6 +91,11 @@ public:
     template<typename... Args>
         requires NoThrowConstructible<decltype(buffers), Args...>
     RefMultiBuffer(Args&&...args) noexcept : buffers{std::forward<decltype(args)>(args)...} {
+    }
+
+    constexpr RefBuffer& operator[](size_t idx) const noexcept {
+        assert(idx <= size);
+        return buffers[idx];
     }
 
     //TODO: How to do this properly?
