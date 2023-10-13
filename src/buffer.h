@@ -27,7 +27,7 @@ class RefBuffer {
     std::span<std::byte> data;
 
 public:
-    RefBuffer() = default;
+    RefBuffer() noexcept = default;
 
     //Constructor for anything that can normally make an std::span<std::byte>
     template<typename... Args>
@@ -67,12 +67,19 @@ static_assert(std::is_trivially_move_constructible_v<RefBuffer>);
 static_assert(std::is_trivially_copy_assignable_v<RefBuffer>);
 static_assert(std::is_trivially_move_assignable_v<RefBuffer>);
 static_assert(std::is_trivially_destructible_v<RefBuffer>);
+static_assert(std::is_nothrow_copy_constructible_v<RefBuffer>);
+static_assert(std::is_nothrow_move_constructible_v<RefBuffer>);
+static_assert(std::is_nothrow_copy_assignable_v<RefBuffer>);
+static_assert(std::is_nothrow_move_assignable_v<RefBuffer>);
 
+template<size_t size>
 class RefMultiBuffer {
-    std::span<RefBuffer> buffers;
+    std::array<RefBuffer, size> buffers;
+    //Don't bother with making a multibuffer larger than a single syscall can take
+    static_assert(size <= IOV_MAX);
 
 public:
-    RefMultiBuffer() = default;
+    RefMultiBuffer() noexcept = default;
 
     //Constructor for anything that can normally make an std::span<RefBuffer>
     template<typename... Args>
@@ -89,12 +96,10 @@ public:
     //}
 };
 
-//Compiler errors to make sure a RefMultiBuffer is as trivial as it should be
-static_assert(std::is_trivially_copyable_v<RefMultiBuffer>);
-static_assert(std::is_trivially_copy_constructible_v<RefMultiBuffer>);
-static_assert(std::is_trivially_move_constructible_v<RefMultiBuffer>);
-static_assert(std::is_trivially_copy_assignable_v<RefMultiBuffer>);
-static_assert(std::is_trivially_move_assignable_v<RefMultiBuffer>);
-static_assert(std::is_trivially_destructible_v<RefMultiBuffer>);
+static_assert(std::is_trivially_copyable_v<RefMultiBuffer<IOV_MAX>>);
+static_assert(std::is_nothrow_copy_constructible_v<RefMultiBuffer<IOV_MAX>>);
+static_assert(std::is_nothrow_move_constructible_v<RefMultiBuffer<IOV_MAX>>);
+static_assert(std::is_nothrow_copy_assignable_v<RefMultiBuffer<IOV_MAX>>);
+static_assert(std::is_nothrow_move_assignable_v<RefMultiBuffer<IOV_MAX>>);
 
 } // namespace ns
