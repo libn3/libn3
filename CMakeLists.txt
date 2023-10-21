@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (libn3)
+project (n3)
 
 set (libn3_VERSION_MAJOR 1)
 set (libn3_VERSION_MINOR 0)
@@ -60,8 +60,8 @@ SET(COMMON_INCLUDE_DIRS
 
 find_package(Threads REQUIRED)
 
-add_library(libn3 SHARED ${COMMON})
-target_include_directories(libn3 PUBLIC ${COMMON_INCLUDE_DIRS})
+add_library(n3 SHARED ${COMMON})
+target_include_directories(n3 PUBLIC ${COMMON_INCLUDE_DIRS})
 
-set_property(TARGET libn3 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-set_property(TARGET libn3 PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+set_property(TARGET n3 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+set_property(TARGET n3 PROPERTY POSITION_INDEPENDENT_CODE TRUE)
