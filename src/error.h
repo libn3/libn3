@@ -1,6 +1,10 @@
 #pragma once
 
+#include <cassert>
 #include <cerrno>
+#include <netdb.h>
+#include <optional>
+#include <sys/types.h>
 #include <utility>
 
 namespace n3 { namespace error {
@@ -233,4 +237,43 @@ namespace n3 { namespace error {
                 std::unreachable();
         }
     }
+
+    [[nodiscard]] constexpr code get_error_code_from_getaddrinfo_err(
+            int addr_err, const std::optional<int> errno_arg) noexcept {
+        if (addr_err == EAI_SYSTEM) {
+            if (!errno_arg.has_value()) {
+                return code::bad_message;
+            }
+            return get_error_code_from_errno(errno_arg.value());
+        }
+
+        //Would trigger default branch std::unreachable call
+        assert(addr_err != EAI_SYSTEM);
+
+        switch (addr_err) {
+            case EAI_ADDRFAMILY:
+                return code::address_not_available;
+            case EAI_AGAIN:
+                return code::resource_unavailable_try_again;
+            case EAI_BADFLAGS:
+                return code::invalid_argument;
+            case EAI_FAIL:
+                return code::host_unreachable;
+            case EAI_FAMILY:
+                return code::address_family_not_supported;
+            case EAI_MEMORY:
+                return code::not_enough_memory;
+            case EAI_NODATA:
+                return code::bad_address;
+            case EAI_NONAME:
+                return code::argument_out_of_domain;
+            case EAI_SERVICE:
+                return code::protocol_error;
+            case EAI_SOCKTYPE:
+                return code::protocol_not_supported;
+            default:
+                std::unreachable();
+        }
+    }
+
 }} // namespace n3::error

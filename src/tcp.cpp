@@ -30,11 +30,26 @@
 
 namespace n3 { namespace net { namespace linux { namespace tcp {
 
-    socket::socket(const std::string_view ip_str, const std::string_view port_str) {
-        //test
+    socket::socket() :
+            sock(::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP)) {
+        if (this->sock == -1) {
+            throw error::get_error_code_from_errno(errno);
+        }
     }
-    socket::socket(const std::string_view ip_str, const uint16_t port_str) {
-        //test
+
+    socket::~socket() noexcept {
+        //No good way to handle error returns, maybe an eventual "cleanup error callback function?"
+        close(this->sock);
     }
+
+    socket::socket(const int sock) : sock{sock} {
+    }
+
+    //socket::socket(const std::string_view ip_str, const std::string_view port_str) {
+    //    sock = 0;
+    //}
+    //socket::socket(const std::string_view ip_str, const uint16_t port_str) {
+    //    sock = 0;
+    //}
 
 }}}} // namespace n3::net::linux::tcp
