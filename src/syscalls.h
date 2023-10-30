@@ -35,4 +35,7 @@ namespace n3 { namespace linux {
     //        const struct sockaddr_storage *dest_addr,
     //        socklen_t addrlen) noexcept;
     //std::expected<size_t, error::code> sendmsg(const int sockfd, const struct msghdr *msg, int flags);
+
+    std::expected<long, error::code> sysconf(const int name) noexcept;
+
 }} // namespace n3::linux

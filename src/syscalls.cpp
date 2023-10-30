@@ -421,4 +421,26 @@ namespace n3 { namespace linux {
         return ret;
     }
 
+    std::expected<long, error::code> sysconf(const int name) noexcept {
+        /*
+         * From the man pages:
+         *
+         * If name corresponds to a maximum or minimum limit, and that limit is indeterminate,
+         * -1 is returned and errno is not changed.
+         * To distinguish an indeterminate limit from an error,
+         * set errno to zero before the call, and then check whether errno is
+         * nonzero when -1 is returned.
+         */
+        errno = 0;
+        const auto ret = ::sysconf(name);
+        if (ret == -1) {
+            if (errno == 0) {
+                //errno not changing means indeterminate value returned successfully instead of error
+                return std::unexpected(error::code::operation_not_supported);
+            }
+            return std::unexpected(error::get_error_code_from_errno(errno));
+        }
+        return ret;
+    }
+
 }} // namespace n3::linux

@@ -15,6 +15,11 @@ namespace n3 {
  * TODO: ConstRefBuffer et al to explicitly have std::span<const std::byte>?
  */
 
+/*
+ * TODO: Naming?
+ * We use both camel_case and PascalCase for our names, what is the convention I'm using?
+ */
+
 template<typename T, typename... Args>
 concept NoThrowConstructible
         = std::constructible_from<T, Args...> && std::is_nothrow_constructible_v<T, Args...>;
@@ -124,5 +129,19 @@ static_assert(std::is_nothrow_move_assignable_v<RefMultiBuffer<IOV_MAX>>);
 
 //TODO: This may be useful as an optimization, std::span equivalent with std::byte* didn't work
 static_assert(std::is_layout_compatible_v<struct iovec, std::pair<void *, size_t>>);
+
+/*
+ * A simple memory page buffer that checks the page size at runtime
+ */
+class PageBuffer {
+    std::unique_ptr<std::byte> underlying;
+
+public:
+    PageBuffer();
+
+    std::byte *data() const noexcept {
+        return this->underlying.get();
+    }
+};
 
 } // namespace n3

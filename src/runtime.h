@@ -2,6 +2,7 @@
 
 #include <tuple>
 
+#include "buffer.h"
 #include "epoll.h"
 #include "error.h"
 
@@ -28,6 +29,8 @@ namespace n3 { namespace runtime {
     class runtime_st {
         n3::epoll::epoll_ctx epoll;
         bool active;
+
+        n3::PageBuffer read_buffer;
 
     public:
         runtime_st() noexcept;
