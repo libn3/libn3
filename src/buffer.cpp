@@ -33,6 +33,7 @@ OwningBuffer::OwningBuffer(std::vector<std::byte>&& init_data) : data{init_data}
 }
 
 PageBuffer::PageBuffer() :
+        page_size{PageSize::get()},
         underlying{[] {
             const auto page_size = PageSize::get();
             return std::unique_ptr<std::byte>(reinterpret_cast<std::byte *>(

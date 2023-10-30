@@ -134,13 +134,16 @@ static_assert(std::is_layout_compatible_v<struct iovec, std::pair<void *, size_t
  * A simple memory page buffer that checks the page size at runtime
  */
 class PageBuffer {
-    std::unique_ptr<std::byte> underlying;
+    const std::unique_ptr<std::byte> underlying;
+    const size_t page_size;
 
 public:
     PageBuffer();
 
-    std::byte *data() const noexcept {
-        return this->underlying.get();
+    //TODO: Add operator* and operator-> as aliases for returning a span for usability?
+
+    const std::span<std::byte> data() const noexcept {
+        return std::span{this->underlying.get(), this->page_size};
     }
 };
 
