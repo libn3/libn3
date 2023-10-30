@@ -134,8 +134,8 @@ static_assert(std::is_layout_compatible_v<struct iovec, std::pair<void *, size_t
  * A simple memory page buffer that checks the page size at runtime
  */
 class PageBuffer {
-    const std::unique_ptr<std::byte> underlying;
     const size_t page_size;
+    const std::unique_ptr<std::byte[]> underlying;
 
 public:
     PageBuffer();
