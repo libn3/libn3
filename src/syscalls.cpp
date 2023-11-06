@@ -418,6 +418,15 @@ std::expected<size_t, error::code> send(
     return ret;
 }
 
+std::expected<size_t, error::code> sendmsg(
+        const int sock, const ::msghdr& msg, const int flags) noexcept {
+    const auto ret = ::sendmsg(sock, std::addressof(msg), flags);
+    if (ret == -1) {
+        return std::unexpected(error::get_error_code_from_errno(errno));
+    }
+    return ret;
+}
+
 std::expected<long, error::code> sysconf(const int name) noexcept {
     /*
          * From the man pages:
@@ -438,22 +447,6 @@ std::expected<long, error::code> sysconf(const int name) noexcept {
         return std::unexpected(error::get_error_code_from_errno(errno));
     }
     return ret;
-}
-
-template<n3::net::AddressType T>
-std::expected<void, error::code> connect(const int sock, const T& addr) noexcept {
-    const auto raw_addr = addr.to_sockaddr();
-    const auto ret
-            = connect(sock, dynamic_cast<::sockaddr *>(std::addressof(raw_addr)), sizeof(raw_addr));
-    if (ret == -1) {
-        if (errno == EINPROGRESS) {
-            //Nonblocking connection initiated as expected
-            //TODO: Unix sockets use EAGAIN, do we need a template specialization just for them?
-            return {};
-        }
-        return std::unexpected(error::get_error_code_from_errno(errno));
-    }
-    return {};
 }
 
 } // namespace n3::linux
