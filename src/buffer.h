@@ -172,10 +172,8 @@ public:
 } // namespace n3
 
 //Specialization in std to mark RefBuffer as a borrowed range since it's basically just a span
-namespace std {
 template<>
-inline constexpr bool ranges::enable_borrowed_range<n3::RefBuffer> = true;
-};
+inline constexpr bool std::ranges::enable_borrowed_range<n3::RefBuffer> = true;
 
 //Make sure the refbuffer is a trivial range type, asserts need to be after the namespace std specialization
 static_assert(std::ranges::borrowed_range<n3::RefBuffer>);
