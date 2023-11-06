@@ -3,6 +3,7 @@
 #include <cassert>
 #include <concepts>
 #include <memory>
+#include <ranges>
 #include <span>
 #include <sys/uio.h>
 #include <type_traits>
@@ -33,50 +34,71 @@ public:
     OwningBuffer(std::vector<std::byte>&& init_data);
 };
 
-class RefBuffer {
-    std::span<std::byte> data;
+class RefBuffer : public std::ranges::view_interface<RefBuffer> {
+    std::span<std::byte> underlying;
 
 public:
     RefBuffer() noexcept = default;
 
     //Constructor for anything that can normally make an std::span<std::byte>
     template<typename... Args>
-        requires NoThrowConstructible<decltype(data), Args...>
-    RefBuffer(Args&&...args) noexcept : data{std::forward<decltype(args)>(args)...} {
+        requires NoThrowConstructible<decltype(underlying), Args...>
+    RefBuffer(Args&&...args) noexcept : underlying{std::forward<decltype(args)>(args)...} {
     }
 
     //Constructor for other types of spans that can be converted to a span of bytes
     template<typename T>
     RefBuffer(std::span<T>&& sp) noexcept :
-            data{std::forward<decltype(sp)>(std::as_writable_bytes(sp))} {
+            underlying{std::forward<decltype(sp)>(std::as_writable_bytes(sp))} {
     }
 
     //Constructor for arbitrary type pointers which can always be aliased by std::byte
     template<typename T>
     RefBuffer(T *const buf, const size_t len) noexcept :
-            data{reinterpret_cast<std::byte *>(buf), len} {
+            underlying{reinterpret_cast<std::byte *>(buf), len} {
     }
 
     //Constructor for iovecs which are basically just a span of bytes
     RefBuffer(const struct iovec iov) noexcept :
-            data{static_cast<std::byte *>(iov.iov_base), iov.iov_len} {
+            underlying{static_cast<std::byte *>(iov.iov_base), iov.iov_len} {
+    }
+
+    [[nodiscard]] constexpr auto data() const noexcept -> std::byte * {
+        return this->underlying.data();
+    }
+
+    [[nodiscard]] constexpr auto size() const noexcept -> size_t {
+        return this->underlying.size_bytes();
     }
 
     [[nodiscard]] constexpr auto as_iovec() const noexcept -> struct iovec {
         return {
-                .iov_base = this->data.data(),
-                .iov_len = this->data.size_bytes(),
+                .iov_base = this->underlying.data(),
+                .iov_len = this->underlying.size_bytes(),
         };
     }
 
     [[nodiscard]] constexpr auto
             as_span() const noexcept -> std::span<std::byte> {
-        return data;
+        return underlying;
     }
 
     constexpr std::byte& operator[](size_t idx) const noexcept {
-        assert(idx <= data.size_bytes());
-        return data[idx];
+        assert(idx <= underlying.size_bytes());
+        return underlying[idx];
+    }
+
+    [[nodiscard]] constexpr auto begin() const noexcept -> std::byte * {
+        return this->underlying.data();
+    }
+    [[nodiscard]] constexpr auto end() const noexcept -> std::byte * {
+        return this->underlying.data() + this->underlying.size_bytes();
+    }
+    [[nodiscard]] constexpr auto cbegin() const noexcept -> const std::byte * {
+        return this->underlying.data();
+    }
+    [[nodiscard]] constexpr auto cend() const noexcept -> const std::byte * {
+        return this->underlying.data() + this->underlying.size_bytes();
     }
 };
 
@@ -148,3 +170,13 @@ public:
 };
 
 } // namespace n3
+
+//Specialization in std to mark RefBuffer as a borrowed range since it's basically just a span
+namespace std {
+template<>
+inline constexpr bool ranges::enable_borrowed_range<n3::RefBuffer> = true;
+};
+
+//Make sure the refbuffer is a trivial range type, asserts need to be after the namespace std specialization
+static_assert(std::ranges::borrowed_range<n3::RefBuffer>);
+static_assert(std::ranges::contiguous_range<n3::RefBuffer>);

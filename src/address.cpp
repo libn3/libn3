@@ -15,7 +15,7 @@ namespace v4 {
             addr{sockaddr.sin_addr.s_addr},
             port{sockaddr.sin_port} {
     }
-    [[nodiscard]] ::sockaddr_in address::to_sockaddr() const noexcept {
+    [[nodiscard]] constexpr ::sockaddr_in address::to_sockaddr() const noexcept {
         ::sockaddr_in out;
         out.sin_family = AF_INET;
         out.sin_port = this->port;
@@ -37,7 +37,7 @@ namespace v6 {
             scope_id{0},
             port{sockaddr.sin6_port} {
     }
-    [[nodiscard]] ::sockaddr_in6 address::to_sockaddr() const noexcept {
+    [[nodiscard]] constexpr ::sockaddr_in6 address::to_sockaddr() const noexcept {
         ::sockaddr_in6 out;
         out.sin6_family = AF_INET6;
         out.sin6_port = this->port;

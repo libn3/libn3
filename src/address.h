@@ -25,7 +25,7 @@ namespace v4 {
     public:
         address() noexcept;
         address(const ::sockaddr_in& sockaddr) noexcept;
-        [[nodiscard]] ::sockaddr_in to_sockaddr() const noexcept;
+        [[nodiscard]] constexpr ::sockaddr_in to_sockaddr() const noexcept;
     };
 
 } // namespace v4
@@ -41,7 +41,7 @@ namespace v6 {
     public:
         address() noexcept;
         address(const ::sockaddr_in6& sockaddr) noexcept;
-        [[nodiscard]] ::sockaddr_in6 to_sockaddr() const noexcept;
+        [[nodiscard]] constexpr ::sockaddr_in6 to_sockaddr() const noexcept;
     };
 } // namespace v6
 }; // namespace n3::net

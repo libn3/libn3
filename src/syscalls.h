@@ -46,6 +46,8 @@ std::expected<size_t, error::code> sendto(
 std::expected<size_t, error::code> sendmsg(
         const int sock, const ::msghdr& msg, const int flags) noexcept;
 
+std::expected<size_t, error::code> recv(const int sock, RefBuffer buf, const int flags) noexcept;
+
 std::expected<long, error::code> sysconf(const int name) noexcept;
 
 template<n3::net::AddressType T>

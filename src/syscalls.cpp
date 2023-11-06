@@ -449,4 +449,12 @@ std::expected<long, error::code> sysconf(const int name) noexcept {
     return ret;
 }
 
+std::expected<size_t, error::code> recv(const int sock, RefBuffer buf, const int flags) noexcept {
+    const auto ret = ::recv(sock, buf.data(), buf.size(), flags);
+    if (ret == -1) {
+        return std::unexpected(error::get_error_code_from_errno(errno));
+    }
+    return ret;
+}
+
 } // namespace n3::linux
