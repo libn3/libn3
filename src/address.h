@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <type_traits>
+#include <utility>
+#include <variant>
 
 namespace n3::net {
 
@@ -44,4 +46,20 @@ namespace v6 {
         [[nodiscard]] constexpr ::sockaddr_in6 to_sockaddr() const noexcept;
     };
 } // namespace v6
+
+//TODO: Is templating the return type with the AddressType concept a better design?
+[[nodiscard]] constexpr auto sockaddr_to_address(const ::sockaddr_storage& addr) noexcept
+        -> std::variant<v4::address, v6::address> {
+    switch (addr.ss_family) {
+        case AF_INET:
+            return {reinterpret_cast<const ::sockaddr_in&>(addr)};
+        case AF_INET6:
+            return {reinterpret_cast<const ::sockaddr_in6&>(addr)};
+        default:
+            //TODO: Could be sockaddr_un or have family AF_UNSPEC, need to support those eventually
+            std::unreachable();
+            break;
+    }
+}
+
 }; // namespace n3::net

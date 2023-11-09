@@ -420,7 +420,7 @@ std::expected<size_t, error::code> send(
 
 std::expected<size_t, error::code> sendmsg(
         const int sock, const ::msghdr& msg, const int flags) noexcept {
-    const auto ret = ::sendmsg(sock, std::addressof(msg), flags);
+    const auto ret = ::sendmsg(sock, &msg, flags);
     if (ret == -1) {
         return std::unexpected(error::get_error_code_from_errno(errno));
     }
@@ -455,6 +455,36 @@ std::expected<size_t, error::code> recv(const int sock, RefBuffer buf, const int
         return std::unexpected(error::get_error_code_from_errno(errno));
     }
     return ret;
+}
+
+std::expected<std::pair<size_t, std::variant<n3::net::v4::address, n3::net::v6::address>>,
+        error::code>
+        recvfrom(const int sock, RefBuffer buf, const int flags) noexcept {
+    ::sockaddr_storage recv_addr{};
+    socklen_t recv_addr_len = sizeof(recv_addr);
+
+    const auto ret = ::recvfrom(sock,
+            buf.data(),
+            buf.size(),
+            flags,
+            reinterpret_cast<::sockaddr *>(&recv_addr),
+            &recv_addr_len);
+    if (ret == -1) {
+        return std::unexpected(error::get_error_code_from_errno(errno));
+    }
+    const auto address = n3::net::sockaddr_to_address(recv_addr);
+
+    return {{ret, address}};
+}
+
+std::expected<std::pair<size_t, ::msghdr>, error::code> recvmsg(
+        const int sock, const int flags) noexcept {
+    ::msghdr msg{};
+    const auto ret = ::recvmsg(sock, &msg, flags);
+    if (ret == -1) {
+        return std::unexpected(error::get_error_code_from_errno(errno));
+    }
+    return {{ret, msg}};
 }
 
 } // namespace n3::linux

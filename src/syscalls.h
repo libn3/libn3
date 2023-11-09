@@ -48,6 +48,13 @@ std::expected<size_t, error::code> sendmsg(
 
 std::expected<size_t, error::code> recv(const int sock, RefBuffer buf, const int flags) noexcept;
 
+std::expected<std::pair<size_t, std::variant<n3::net::v4::address, n3::net::v6::address>>,
+        error::code>
+        recvfrom(const int sock, RefBuffer buf, const int flags) noexcept;
+
+std::expected<std::pair<size_t, ::msghdr>, error::code> recvmsg(
+        const int sock, const int flags) noexcept;
+
 std::expected<long, error::code> sysconf(const int name) noexcept;
 
 template<n3::net::AddressType T>
