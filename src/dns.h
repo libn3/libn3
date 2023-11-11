@@ -11,9 +11,9 @@
 namespace n3::net::dns {
 
 /*
-     * TODO: Can probably avoid copies of data in this class if I make it own a refcount that
-     * controls when we call freeaddrinfo()
-     */
+ * TODO: Can probably avoid copies of data in this class if I make it own a refcount that
+ * controls when we call freeaddrinfo()
+ */
 class addrinfo {
     int ai_flags;
     int ai_family;
@@ -29,8 +29,8 @@ public:
 
 //TODO: This can throw from dynamic memory allocation, what is my strategy for that?
 [[nodiscard]] const std::expected<std::vector<addrinfo>, n3::error::code> getaddrinfo(
-        const std::string& node,
-        const std::string& service,
+        const std::optional<std::string>& node,
+        const std::optional<std::string>& service,
         const std::optional<::addrinfo>& hints = std::nullopt);
 
 }; // namespace n3::net::dns

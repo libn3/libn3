@@ -44,9 +44,17 @@ addrinfo::addrinfo(const ::addrinfo& caddr) noexcept :
 }
 
 [[nodiscard]] const std::expected<std::vector<addrinfo>, n3::error::code> getaddrinfo(
-        const std::string& node,
-        const std::string& service,
+        const std::optional<std::string>& node,
+        const std::optional<std::string>& service,
         const std::optional<::addrinfo>& hints) {
+    if (!node && !service) {
+        /*
+         * Per glibc documentation:
+         * Either node or service, but not both, may be NULL.
+         */
+        return std::unexpected(n3::error::code::invalid_argument);
+    }
+
     const std::unique_ptr<::addrinfo *, void (*)(::addrinfo **)> addr_list{
             nullptr, [](::addrinfo **addr) {
                 if (addr) {
@@ -54,9 +62,9 @@ addrinfo::addrinfo(const ::addrinfo& caddr) noexcept :
                 }
             }};
 
-    int ret = getaddrinfo(node.c_str(),
-            service.c_str(),
-            (hints.has_value()) ? std::addressof(*hints) : nullptr,
+    int ret = getaddrinfo(node.transform(&std::string::c_str).value_or(nullptr),
+            service.transform(&std::string::c_str).value_or(nullptr),
+            hints.transform([](const auto& hints_arg) { return &hints_arg; }).value_or(nullptr),
             addr_list.get());
     if (ret != 0) {
         return std::unexpected(n3::error::get_error_code_from_getaddrinfo_err(ret, errno));
