@@ -495,4 +495,18 @@ std::expected<void, error::code> listen(const int sock, const int backlog) noexc
     return {};
 }
 
+std::expected<std::variant<n3::net::v4::address, n3::net::v6::address>, error::code> accept(
+        const int sock) noexcept {
+    ::sockaddr_storage recv_addr{};
+    socklen_t recv_addr_len = sizeof(recv_addr);
+
+    const auto ret = ::accept(sock, reinterpret_cast<::sockaddr *>(&recv_addr), &recv_addr_len);
+    if (ret == -1) {
+        return std::unexpected(error::get_error_code_from_errno(errno));
+    }
+    const auto address = n3::net::sockaddr_to_address(recv_addr);
+
+    return {address};
+}
+
 } // namespace n3::linux
