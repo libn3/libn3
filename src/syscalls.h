@@ -86,7 +86,7 @@ std::expected<void, error::code> bind(const int sock, const T& addr) noexcept {
 
 std::expected<void, error::code> listen(const int sock, const int backlog) noexcept;
 
-std::expected<std::variant<n3::net::v4::address, n3::net::v6::address>, error::code> accept(
-        const int sock) noexcept;
+std::expected<std::pair<int, std::variant<n3::net::v4::address, n3::net::v6::address>>, error::code>
+        accept(const int sock) noexcept;
 
 } // namespace n3::linux

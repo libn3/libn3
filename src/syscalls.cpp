@@ -495,8 +495,8 @@ std::expected<void, error::code> listen(const int sock, const int backlog) noexc
     return {};
 }
 
-std::expected<std::variant<n3::net::v4::address, n3::net::v6::address>, error::code> accept(
-        const int sock) noexcept {
+std::expected<std::pair<int, std::variant<n3::net::v4::address, n3::net::v6::address>>, error::code>
+        accept(const int sock) noexcept {
     ::sockaddr_storage recv_addr{};
     socklen_t recv_addr_len = sizeof(recv_addr);
 
@@ -506,7 +506,7 @@ std::expected<std::variant<n3::net::v4::address, n3::net::v6::address>, error::c
     }
     const auto address = n3::net::sockaddr_to_address(recv_addr);
 
-    return {address};
+    return {{ret, address}};
 }
 
 } // namespace n3::linux
