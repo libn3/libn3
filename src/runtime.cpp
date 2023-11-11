@@ -16,26 +16,26 @@
 #include "epoll.h"
 #include "error.h"
 
-namespace n3 { namespace runtime {
+namespace n3::runtime {
 
-    runtime_st::runtime_st() noexcept : epoll{}, active{false} {
-    }
+runtime_st::runtime_st() noexcept : epoll{}, active{false} {
+}
 
-    void runtime_st::run() {
-        while (this->active) {
-            const auto events = this->epoll.wait(std::nullopt);
-            if (!events.has_value()) {
-                const auto err = events.error();
-                if (err == n3::error::code::resource_unavailable_try_again) {
-                    continue;
-                }
-                //TODO: How to handle general epoll errors?
+void runtime_st::run() {
+    while (this->active) {
+        const auto events = this->epoll.wait(std::nullopt);
+        if (!events.has_value()) {
+            const auto err = events.error();
+            if (err == n3::error::code::resource_unavailable_try_again) {
                 continue;
             }
-            assert(events.has_value());
-            //TODO: Where and how am I managing the epoll return values?
+            //TODO: How to handle general epoll errors?
+            continue;
         }
-        return;
+        assert(events.has_value());
+        //TODO: Where and how am I managing the epoll return values?
     }
+    return;
+}
 
-}} // namespace n3::runtime
+} // namespace n3::runtime

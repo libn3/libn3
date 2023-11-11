@@ -11,31 +11,31 @@
  * epoll, raw TCP sockets, syscalls, and other details
  */
 
-namespace n3 { namespace runtime {
+namespace n3::runtime {
 
-    template<typename F, typename... Args>
-    class callback {
-        F func;
-        std::tuple<Args...> args;
+template<typename F, typename... Args>
+class callback {
+    F func;
+    std::tuple<Args...> args;
 
-    public:
-        callback();
-    };
+public:
+    callback();
+};
 
-    //TODO: Add configuration options through some init/builder/option struct pattern
-    //TODO: Add multithreaded runtime
-    //TODO: Naming?
+//TODO: Add configuration options through some init/builder/option struct pattern
+//TODO: Add multithreaded runtime
+//TODO: Naming?
 
-    class runtime_st {
-        n3::epoll::epoll_ctx epoll;
-        bool active;
+class runtime_st {
+    n3::epoll::epoll_ctx epoll;
+    bool active;
 
-        n3::PageBuffer read_buffer;
+    n3::PageBuffer read_buffer;
 
-    public:
-        runtime_st() noexcept;
+public:
+    runtime_st() noexcept;
 
-        void run();
-    };
+    void run();
+};
 
-}} // namespace n3::runtime
+} // namespace n3::runtime
