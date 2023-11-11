@@ -487,4 +487,12 @@ std::expected<std::pair<size_t, ::msghdr>, error::code> recvmsg(
     return {{ret, msg}};
 }
 
+std::expected<void, error::code> listen(const int sock, const int backlog) noexcept {
+    const auto ret = ::listen(sock, backlog);
+    if (ret == -1) {
+        return std::unexpected(error::get_error_code_from_errno(errno));
+    }
+    return {};
+}
+
 } // namespace n3::linux

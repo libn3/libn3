@@ -60,8 +60,8 @@ std::expected<long, error::code> sysconf(const int name) noexcept;
 template<n3::net::AddressType T>
 std::expected<void, error::code> connect(const int sock, const T& addr) noexcept {
     const auto raw_addr = addr.to_sockaddr();
-    const auto ret
-            = connect(sock, dynamic_cast<::sockaddr *>(std::addressof(raw_addr)), sizeof(raw_addr));
+    const auto ret = ::connect(
+            sock, dynamic_cast<::sockaddr *>(std::addressof(raw_addr)), sizeof(raw_addr));
     if (ret == -1) {
         if (errno == EINPROGRESS) {
             //Nonblocking connection initiated as expected
@@ -72,5 +72,18 @@ std::expected<void, error::code> connect(const int sock, const T& addr) noexcept
     }
     return {};
 }
+
+template<n3::net::AddressType T>
+std::expected<void, error::code> bind(const int sock, const T& addr) noexcept {
+    const auto raw_addr = addr.to_sockaddr();
+    const auto ret
+            = ::bind(sock, dynamic_cast<::sockaddr *>(std::addressof(raw_addr)), sizeof(raw_addr));
+    if (ret == -1) {
+        return std::unexpected(error::get_error_code_from_errno(errno));
+    }
+    return {};
+}
+
+std::expected<void, error::code> listen(const int sock, const int backlog) noexcept;
 
 } // namespace n3::linux
