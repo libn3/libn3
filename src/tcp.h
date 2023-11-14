@@ -10,24 +10,24 @@
 #include "error.h"
 #include "socket.h"
 
-namespace n3 { namespace net { namespace linux { namespace tcp {
+namespace n3::net::linux::tcp {
 
-    class socket : public n3::net::linux::socket {
-        const int sock;
+class TcpSocket : public n3::net::linux::socket<TcpSocket> {
+    const int sock;
 
-    public:
-        socket();
-        socket(const int sock);
-        socket(const std::string_view ip_str, const std::string_view port_str);
-        socket(const std::string_view ip_str, const uint16_t port_str);
+public:
+    TcpSocket();
+    TcpSocket(const int sock_arg);
+    TcpSocket(const std::string_view ip_str, const std::string_view port_str);
+    TcpSocket(const std::string_view ip_str, const uint16_t port_str);
 
-        ~socket() noexcept;
+    ~TcpSocket() noexcept;
 
-        socket(const socket&) = delete;
-        socket(socket&&) noexcept = default;
+    TcpSocket(const TcpSocket&) = delete;
+    TcpSocket(TcpSocket&&) noexcept = default;
 
-        socket& operator=(const socket&) = delete;
-        socket& operator=(socket&&) = default;
-    };
+    TcpSocket& operator=(const TcpSocket&) = delete;
+    TcpSocket& operator=(TcpSocket&&) = default;
+};
 
-}}}} // namespace n3::net::linux::tcp
+} // namespace n3::net::linux::tcp

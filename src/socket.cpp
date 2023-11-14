@@ -28,6 +28,6 @@
 
 #include "error.h"
 
-namespace n3 { namespace net { namespace linux {
+namespace n3::net::linux {
 
-}}} // namespace n3::net::linux
+} // namespace n3::net::linux
