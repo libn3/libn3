@@ -31,6 +31,12 @@
 
 namespace n3::net::linux {
 
+/*
+ * TODO: Most of these functions need the template magic to create a callback object with arbitrary args
+ * Things like recv() will be async, so we need the callback semantics/logic in order to actually use
+ * the event loop we're designing the library for
+ */
+
 template<typename T>
 class socket {
 public:
