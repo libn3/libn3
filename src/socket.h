@@ -73,7 +73,7 @@ public:
     }
 
     template<n3::net::AddressType U>
-    std::expected<void, error::code> connect(const int sock, const T& addr) const noexcept {
+    std::expected<void, error::code> connect(const int sock, const U& addr) const noexcept {
         if constexpr (std::is_member_function_pointer_v<decltype(&T::template connect<U>)>) {
             return static_cast<T const *>(this)->template connect<U>(sock, addr);
         }
