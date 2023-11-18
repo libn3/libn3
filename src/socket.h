@@ -74,7 +74,7 @@ public:
                 return {0};
             }
         }
-        cb(std::move(ret));
+        std::move(cb)(std::move(ret));
 
         //cb(n3::linux::send(sock, buf, flags));
 
