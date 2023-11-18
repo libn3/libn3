@@ -37,7 +37,7 @@ public:
      * a compile time error if the user doesn't std::move() the object when calling the callback
      */
     void operator()(cArgs&&...call_args) && noexcept(this->mf()) {
-        std::move(this->mf)(call_args...);
+        std::move(this->mf)(std::forward(call_args...));
     }
 };
 
