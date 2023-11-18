@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "error.h"
+#include "runtime.h"
 #include "syscalls.h"
 
 namespace n3::net::linux {
@@ -54,12 +55,30 @@ public:
         return n3::linux::listen(sock, backlog);
     }
 
-    std::expected<size_t, error::code> send(
-            const int sock, const RefBuffer buf, const int flags) const noexcept {
+    template<typename F, typename... Args>
+        requires std::invocable<F, Args...>
+    std::expected<size_t, error::code> send(const int sock,
+            const RefBuffer buf,
+            const int flags,
+            F&& cb_func,
+            Args&&...cb_args) const noexcept {
+        n3::runtime::callback<std::expected<size_t, error::code>> cb{
+                std::forward(cb_func), std::forward(cb_args...)};
         if constexpr (std::is_member_function_pointer_v<decltype(&T::send)>) {
             return static_cast<T const *>(this)->send(sock, buf, flags);
         }
-        return n3::linux::send(sock, buf, flags);
+        auto&& ret = n3::linux::send(sock, buf, flags);
+
+        if (!ret.has_value()) {
+            if (ret.error() == n3::error::code::resource_unavailable_try_again) {
+                return {0};
+            }
+        }
+        cb(std::move(ret));
+
+        //cb(n3::linux::send(sock, buf, flags));
+
+        return {0};
     }
 
     std::expected<size_t, error::code> recv(
