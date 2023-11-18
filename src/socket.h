@@ -55,15 +55,14 @@ public:
         return n3::linux::listen(sock, backlog);
     }
 
+    //TODO: Probably needs a callback invocable concept that replicates the bind_front arg stacking
     template<typename F, typename... Args>
-        requires std::invocable<F, Args...>
+        requires std::invocable<F, std::expected<size_t, error::code>, Args...>
     std::expected<size_t, error::code> send(const int sock,
             const RefBuffer buf,
             const int flags,
             F&& cb_func,
             Args&&...cb_args) const noexcept {
-        n3::runtime::callback<std::expected<size_t, error::code>> cb{
-                std::forward(cb_func), std::forward(cb_args...)};
         if constexpr (std::is_member_function_pointer_v<decltype(&T::send)>) {
             return static_cast<T const *>(this)->send(sock, buf, flags);
         }
@@ -74,6 +73,9 @@ public:
                 return {0};
             }
         }
+
+        n3::runtime::callback<std::expected<size_t, error::code>> cb{
+                std::forward<F&&>(cb_func), std::forward<Args&&...>(cb_args...)};
         std::move(cb)(std::move(ret));
 
         return {0};

@@ -21,7 +21,8 @@ class callback {
 
 public:
     template<typename F, typename... fArgs>
-    callback(F&& func, fArgs&&...func_args) : mf{std::bind_front(func, func_args...)} {
+    callback(F&& func, fArgs&&...func_args) :
+            mf{std::bind_front(std::forward<F&&>(func), std::forward<fArgs&&...>(func_args...))} {
     }
 
     callback(const callback&) = delete;
@@ -36,8 +37,11 @@ public:
      * And with it added explicitly, that means the lvalue reference call doesn't exist, so we get
      * a compile time error if the user doesn't std::move() the object when calling the callback
      */
-    void operator()(cArgs&&...call_args) && noexcept(this->mf()) {
-        std::move(this->mf)(std::forward(call_args...));
+    void operator()(cArgs&&...call_args) && noexcept(
+            noexcept(this->mf(std::forward<cArgs&&...>(call_args...)))) {
+        std::move(this->mf)(std::forward<cArgs&&...>(call_args...));
+        //TODO: Would like to do something like empty out the function after usage by setting nullptr
+        //Problem is, calling operator() on an empty std::move_only_function is UB, so I'd have to throw something myself
     }
 };
 
