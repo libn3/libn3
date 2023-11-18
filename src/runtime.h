@@ -14,6 +14,7 @@
 
 namespace n3::runtime {
 
+//TODO: This is a one-time-only callback, do we want a second potential type for multi-call?
 template<typename... cArgs>
 class callback {
     std::move_only_function<void(cArgs...)> mf;
@@ -30,16 +31,13 @@ public:
     callback& operator=(callback&&) = default;
 
     /*
-     * TODO: Callbacks may not necessarily be allowed to be called multiple times
-     * We either need a "Multi-call callback" type to differentiate and/or find a way of changing
-     * this object's lifecycle/implementation to handle single-use-only call semantics
-     * Likely requires some nonsense with destructor calls, a trivial boolean flag is_executed,
-     * and/or adding the && quality to the function (similar to const'ing a member function) to
-     * force it to only exist for rvalue reference types
-     * May or may not require std::move on the std::move_only_function as part of this, not sure
+     * The && at the end signifies that this is only callable by rvalue references of *this
+     * It's a way to specify overload resolution based on reference type
+     * And with it added explicitly, that means the lvalue reference call doesn't exist, so we get
+     * a compile time error if the user doesn't std::move() the object when calling the callback
      */
-    void operator()(cArgs&&...call_args) noexcept(this->mf()) {
-        this->mf(call_args...);
+    void operator()(cArgs&&...call_args) && noexcept(this->mf()) {
+        std::move(this->mf)(call_args...);
     }
 };
 
