@@ -356,6 +356,7 @@ std::expected<void, error::code> setsockopt(
 
 std::expected<std::span<std::byte>, error::code> getsockopt(
         const int sock, const int level, const int option, const RefBuffer option_buf) noexcept {
+    //TODO: Set this up at compile time with templates instead of an application level check
     if (option_buf.as_span().size_bytes() < get_sockopt_size(level, option)) {
         return std::unexpected(error::code::invalid_argument);
     }
@@ -369,9 +370,9 @@ std::expected<std::span<std::byte>, error::code> getsockopt(
     return option_buf.as_span().first(optlen);
 }
 
-std::expected<size_t, error::code> readv(
-        const int fd, std::span<std::span<std::byte>> bufs) noexcept {
+std::expected<size_t, int> readv(const int fd, std::span<std::span<std::byte>> bufs) noexcept {
     //Validate assumption about the length of the caller
+    //TODO: Set this up at compile time with templates instead of an application level check
     assert(bufs.size() <= IOV_MAX);
 
     std::array<struct iovec, IOV_MAX> converted_bufs;
@@ -383,15 +384,15 @@ std::expected<size_t, error::code> readv(
 
     const auto ret = readv(fd, converted_bufs.data(), bufs.size());
     if (ret == -1) {
-        return std::unexpected(error::get_error_code_from_errno(errno));
+        return std::unexpected(errno);
     }
     assert(ret >= 0);
     return ret;
 }
 
-std::expected<size_t, error::code> writev(
-        const int fd, std::span<std::span<std::byte>> bufs) noexcept {
+std::expected<size_t, int> writev(const int fd, std::span<std::span<std::byte>> bufs) noexcept {
     //Validate assumption about the length of the caller
+    //TODO: Set this up at compile time with templates instead of an application level check
     assert(bufs.size() <= IOV_MAX);
 
     std::array<struct iovec, IOV_MAX> converted_bufs;
@@ -403,26 +404,24 @@ std::expected<size_t, error::code> writev(
 
     const auto ret = writev(fd, converted_bufs.data(), bufs.size());
     if (ret == -1) {
-        return std::unexpected(error::get_error_code_from_errno(errno));
+        return std::unexpected(errno);
     }
     assert(ret >= 0);
     return ret;
 }
 
-std::expected<size_t, error::code> send(
-        const int sock, const RefBuffer buf, const int flags) noexcept {
+std::expected<size_t, int> send(const int sock, const RefBuffer buf, const int flags) noexcept {
     const auto ret = ::send(sock, buf.as_span().data(), buf.as_span().size_bytes(), flags);
     if (ret == -1) {
-        return std::unexpected(error::get_error_code_from_errno(errno));
+        return std::unexpected(errno);
     }
     return ret;
 }
 
-std::expected<size_t, error::code> sendmsg(
-        const int sock, const ::msghdr& msg, const int flags) noexcept {
+std::expected<size_t, int> sendmsg(const int sock, const ::msghdr& msg, const int flags) noexcept {
     const auto ret = ::sendmsg(sock, &msg, flags);
     if (ret == -1) {
-        return std::unexpected(error::get_error_code_from_errno(errno));
+        return std::unexpected(errno);
     }
     return ret;
 }
@@ -449,10 +448,10 @@ std::expected<long, error::code> sysconf(const int name) noexcept {
     return ret;
 }
 
-std::expected<size_t, error::code> recv(const int sock, RefBuffer buf, const int flags) noexcept {
+std::expected<size_t, int> recv(const int sock, RefBuffer buf, const int flags) noexcept {
     const auto ret = ::recv(sock, buf.data(), buf.size(), flags);
     if (ret == -1) {
-        return std::unexpected(error::get_error_code_from_errno(errno));
+        return std::unexpected(errno);
     }
     return ret;
 }
@@ -487,22 +486,22 @@ std::expected<std::pair<size_t, ::msghdr>, error::code> recvmsg(
     return {{ret, msg}};
 }
 
-std::expected<void, error::code> listen(const int sock, const int backlog) noexcept {
+std::expected<void, int> listen(const int sock, const int backlog) noexcept {
     const auto ret = ::listen(sock, backlog);
     if (ret == -1) {
-        return std::unexpected(error::get_error_code_from_errno(errno));
+        return std::unexpected(errno);
     }
     return {};
 }
 
-std::expected<std::pair<int, std::variant<n3::net::v4::address, n3::net::v6::address>>, error::code>
-        accept(const int sock) noexcept {
+std::expected<std::pair<int, std::variant<n3::net::v4::address, n3::net::v6::address>>, int> accept(
+        const int sock) noexcept {
     ::sockaddr_storage recv_addr{};
     socklen_t recv_addr_len = sizeof(recv_addr);
 
     const auto ret = ::accept(sock, reinterpret_cast<::sockaddr *>(&recv_addr), &recv_addr_len);
     if (ret == -1) {
-        return std::unexpected(error::get_error_code_from_errno(errno));
+        return std::unexpected(errno);
     }
     const auto address = n3::net::sockaddr_to_address(recv_addr);
 

@@ -20,13 +20,10 @@ std::expected<std::span<std::byte>, error::code> getsockopt(
         const int sock, const int level, const int option, const RefBuffer option_buf) noexcept;
 
 //TODO: Convert to use RefMultiBuffer
-std::expected<size_t, error::code> readv(
-        const int fd, std::span<std::span<std::byte>> bufs) noexcept;
-std::expected<size_t, error::code> writev(
-        const int fd, std::span<std::span<std::byte>> bufs) noexcept;
+std::expected<size_t, int> readv(const int fd, std::span<std::span<std::byte>> bufs) noexcept;
+std::expected<size_t, int> writev(const int fd, std::span<std::span<std::byte>> bufs) noexcept;
 
-std::expected<size_t, error::code> send(
-        const int sock, const RefBuffer buf, const int flags) noexcept;
+std::expected<size_t, int> send(const int sock, const RefBuffer buf, const int flags) noexcept;
 
 template<n3::net::AddressType T>
 std::expected<size_t, error::code> sendto(
@@ -44,10 +41,9 @@ std::expected<size_t, error::code> sendto(
     return ret;
 }
 
-std::expected<size_t, error::code> sendmsg(
-        const int sock, const ::msghdr& msg, const int flags) noexcept;
+std::expected<size_t, int> sendmsg(const int sock, const ::msghdr& msg, const int flags) noexcept;
 
-std::expected<size_t, error::code> recv(const int sock, RefBuffer buf, const int flags) noexcept;
+std::expected<size_t, int> recv(const int sock, RefBuffer buf, const int flags) noexcept;
 
 std::expected<std::pair<size_t, std::variant<n3::net::v4::address, n3::net::v6::address>>,
         error::code>
@@ -76,19 +72,19 @@ std::expected<void, error::code> connect(const int sock, const T& addr) noexcept
 }
 
 template<n3::net::AddressType T>
-std::expected<void, error::code> bind(const int sock, const T& addr) noexcept {
+std::expected<void, int> bind(const int sock, const T& addr) noexcept {
     const auto raw_addr = addr.to_sockaddr();
     const auto ret
             = ::bind(sock, dynamic_cast<::sockaddr *>(std::addressof(raw_addr)), sizeof(raw_addr));
     if (ret == -1) {
-        return std::unexpected(error::get_error_code_from_errno(errno));
+        return std::unexpected(errno);
     }
     return {};
 }
 
-std::expected<void, error::code> listen(const int sock, const int backlog) noexcept;
+std::expected<void, int> listen(const int sock, const int backlog) noexcept;
 
-std::expected<std::pair<int, std::variant<n3::net::v4::address, n3::net::v6::address>>, error::code>
-        accept(const int sock) noexcept;
+std::expected<std::pair<int, std::variant<n3::net::v4::address, n3::net::v6::address>>, int> accept(
+        const int sock) noexcept;
 
 } // namespace n3::linux
