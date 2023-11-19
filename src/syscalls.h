@@ -64,6 +64,7 @@ std::expected<void, error::code> connect(const int sock, const T& addr) noexcept
     const auto ret = ::connect(
             sock, dynamic_cast<::sockaddr *>(std::addressof(raw_addr)), sizeof(raw_addr));
     if (ret == -1) {
+        //TODO: Probably want to move this one level of abstraction up, and keep the syscall wrapper simple
         if (errno == EINPROGRESS) {
             //Nonblocking connection initiated as expected
             //TODO: Unix sockets use EAGAIN, do we need a template specialization just for them?

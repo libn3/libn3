@@ -56,29 +56,27 @@ public:
     }
 
     //TODO: Probably needs a callback invocable concept that replicates the bind_front arg stacking
+    //TODO: Verify that you can construct a callback object with the template types/args
+    //TODO: Do I need to make the noexcept qualifier here conditional on something?
     template<typename F, typename... Args>
         requires std::invocable<F, std::expected<size_t, error::code>, Args...>
-    std::expected<size_t, error::code> send(const int sock,
-            const RefBuffer buf,
-            const int flags,
-            F&& cb_func,
-            Args&&...cb_args) const noexcept {
+    void send(const int sock, const RefBuffer buf, const int flags, F&& cb_func, Args&&...cb_args)
+            const noexcept {
+        //TODO: Verify that any child types that override match the same signature
         if constexpr (std::is_member_function_pointer_v<decltype(&T::send)>) {
             return static_cast<T const *>(this)->send(sock, buf, flags);
         }
         auto&& ret = n3::linux::send(sock, buf, flags);
 
-        if (!ret.has_value()) {
-            if (ret.error() == n3::error::code::resource_unavailable_try_again) {
-                return {0};
-            }
+        //TODO: I hate this check, requires error code design change to be more user friendly
+        if (!ret.has_value() && ret.error() == n3::error::code::resource_unavailable_try_again) {
+            //TODO: Save the callback in the event loop somehow for future use when complete
+            return;
         }
-
+        //Either a successful return code or abnormal error, either way, call the callback now
         n3::runtime::callback<std::expected<size_t, error::code>> cb{
                 std::forward<F&&>(cb_func), std::forward<Args&&...>(cb_args...)};
         std::move(cb)(std::move(ret));
-
-        return {0};
     }
 
     std::expected<size_t, error::code> recv(

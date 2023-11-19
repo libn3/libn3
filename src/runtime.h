@@ -20,6 +20,7 @@ class callback {
     std::move_only_function<void(cArgs...)> mf;
 
 public:
+    //TODO: Verify requirements on std::move_only_function to prevent UB (like ensure Func type is constructible)
     template<typename F, typename... fArgs>
     callback(F&& func, fArgs&&...func_args) :
             mf{std::bind_front(std::forward<F&&>(func), std::forward<fArgs&&...>(func_args...))} {
