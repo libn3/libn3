@@ -71,12 +71,12 @@ public:
         //TODO: I hate this check, requires error code design change to be more user friendly
         if (!ret.has_value() && ret.error() == n3::error::code::resource_unavailable_try_again) {
             //TODO: Save the callback in the event loop somehow for future use when complete
+            [[maybe_unused]] n3::runtime::callback<std::expected<size_t, error::code>> cb{
+                    std::forward<F&&>(cb_func), std::forward<Args&&...>(cb_args...)};
             return;
         }
         //Either a successful return code or abnormal error, either way, call the callback now
-        n3::runtime::callback<std::expected<size_t, error::code>> cb{
-                std::forward<F&&>(cb_func), std::forward<Args&&...>(cb_args...)};
-        std::move(cb)(std::move(ret));
+        std::invoke(cb_func, cb_args...);
     }
 
     std::expected<size_t, error::code> recv(
