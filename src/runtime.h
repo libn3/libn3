@@ -51,7 +51,7 @@ public:
 //TODO: Naming?
 
 class runtime_st {
-    n3::epoll::epoll_ctx epoll;
+    n3::linux::epoll::epoll_ctx epoll;
     bool active;
 
     n3::PageBuffer read_buffer;

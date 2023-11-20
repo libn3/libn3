@@ -26,7 +26,7 @@ void runtime_st::run() {
         const auto events = this->epoll.wait(std::nullopt);
         if (!events.has_value()) {
             const auto err = events.error();
-            if (err == n3::error::code::resource_unavailable_try_again) {
+            if (err == ETIMEDOUT) {
                 continue;
             }
             //TODO: How to handle general epoll errors?
