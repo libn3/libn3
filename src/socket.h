@@ -76,7 +76,7 @@ public:
             return;
         }
         //Either a successful return code or abnormal error, either way, call the callback now
-        std::invoke(cb_func, cb_args...);
+        std::invoke(cb_func, ret.transform_error(&error::get_error_code_from_errno), cb_args...);
     }
 
     //TODO: What is the plan with socket object syscall wrapper return types?
