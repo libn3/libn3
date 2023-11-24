@@ -118,6 +118,7 @@ template<size_t size>
 class RefMultiBuffer {
     std::array<RefBuffer, size> buffers;
     //Don't bother with making a multibuffer larger than a single syscall can take
+    //TODO: Concept constrain the class rather than static assert this?
     static_assert(size <= IOV_MAX);
 
 public:
@@ -128,6 +129,28 @@ public:
         requires NoThrowConstructible<decltype(buffers), Args...>
     RefMultiBuffer(Args&&...args) noexcept : buffers{std::forward<decltype(args)>(args)...} {
     }
+
+    /*
+     * TODO: Implement constructor for pointers and non-const lvalue-references
+     * Would be useful to transparently switch to scatter-gather IO based on usage
+     * Requires some fancy concept constraints to make sure we can make iovecs as expected
+     * For example:
+     *
+     * TcpSocket s{};
+     * s.connect("127.0.0.1", 80);
+     *
+     * int x = 0;
+     * uint32_t y = 0xdeadbeef;
+     * std::string body = "Some longer string of text";
+     *
+     * s.send(x, y, body); //This would call writev et al under the hood
+     */
+    /*
+    template<typename... Args>
+        requires NoThrowConstructible<decltype(buffers), Args...>
+    RefMultiBuffer(Args&&...args) noexcept : buffers{std::forward<decltype(args)>(args)...} {
+    }
+    */
 
     constexpr RefBuffer& operator[](size_t idx) const noexcept {
         assert(idx <= size);

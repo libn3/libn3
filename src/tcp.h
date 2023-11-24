@@ -27,7 +27,7 @@ public:
     TcpSocket(TcpSocket&&) noexcept = default;
 
     TcpSocket& operator=(const TcpSocket&) = delete;
-    TcpSocket& operator=(TcpSocket&&) = default;
+    TcpSocket& operator=(TcpSocket&&) noexcept = default;
 };
 
 } // namespace n3::net::linux::tcp

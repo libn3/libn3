@@ -30,7 +30,7 @@ public:
     callback(callback&&) noexcept = default;
 
     callback& operator=(const callback&) = delete;
-    callback& operator=(callback&&) = default;
+    callback& operator=(callback&&) noexcept = default;
 
     /*
      * The && at the end signifies that this is only callable by rvalue references of *this
