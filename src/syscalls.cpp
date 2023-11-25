@@ -341,7 +341,7 @@ namespace n3::linux {
     return 0;
 }
 
-std::expected<void, error::code> setsockopt(
+std::expected<void, error::ErrorCode> setsockopt(
         const int sock, const int level, const int option, const RefBuffer option_value) noexcept {
     const auto ret = ::setsockopt(sock,
             level,
@@ -354,11 +354,11 @@ std::expected<void, error::code> setsockopt(
     return {};
 }
 
-std::expected<std::span<std::byte>, error::code> getsockopt(
+std::expected<std::span<std::byte>, error::ErrorCode> getsockopt(
         const int sock, const int level, const int option, const RefBuffer option_buf) noexcept {
     //TODO: Set this up at compile time with templates instead of an application level check
     if (option_buf.as_span().size_bytes() < get_sockopt_size(level, option)) {
-        return std::unexpected(error::code::invalid_argument);
+        return std::unexpected(error::get_error_code_from_errno(EINVAL));
     }
 
     socklen_t optlen = 0;
@@ -426,7 +426,7 @@ std::expected<size_t, int> sendmsg(const int sock, const ::msghdr& msg, const in
     return ret;
 }
 
-std::expected<long, error::code> sysconf(const int name) noexcept {
+std::expected<long, error::ErrorCode> sysconf(const int name) noexcept {
     /*
          * From the man pages:
          *
@@ -441,7 +441,7 @@ std::expected<long, error::code> sysconf(const int name) noexcept {
     if (ret == -1) {
         if (errno == 0) {
             //errno not changing means indeterminate value returned successfully instead of error
-            return std::unexpected(error::code::operation_not_supported);
+            return std::unexpected(error::get_error_code_from_errno(ENOTSUP));
         }
         return std::unexpected(error::get_error_code_from_errno(errno));
     }
@@ -457,7 +457,7 @@ std::expected<size_t, int> recv(const int sock, RefBuffer buf, const int flags) 
 }
 
 std::expected<std::pair<size_t, std::variant<n3::net::v4::address, n3::net::v6::address>>,
-        error::code>
+        error::ErrorCode>
         recvfrom(const int sock, RefBuffer buf, const int flags) noexcept {
     ::sockaddr_storage recv_addr{};
     socklen_t recv_addr_len = sizeof(recv_addr);
@@ -476,7 +476,7 @@ std::expected<std::pair<size_t, std::variant<n3::net::v4::address, n3::net::v6::
     return {{ret, address}};
 }
 
-std::expected<std::pair<size_t, ::msghdr>, error::code> recvmsg(
+std::expected<std::pair<size_t, ::msghdr>, error::ErrorCode> recvmsg(
         const int sock, const int flags) noexcept {
     ::msghdr msg{};
     const auto ret = ::recvmsg(sock, &msg, flags);

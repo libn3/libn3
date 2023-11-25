@@ -28,7 +28,7 @@ public:
 };
 
 //TODO: This can throw from dynamic memory allocation, what is my strategy for that?
-[[nodiscard]] const std::expected<std::vector<addrinfo>, n3::error::code> getaddrinfo(
+[[nodiscard]] const std::expected<std::vector<addrinfo>, n3::error::ErrorCode> getaddrinfo(
         const std::optional<std::string>& node,
         const std::optional<std::string>& service,
         const std::optional<::addrinfo>& hints = std::nullopt);

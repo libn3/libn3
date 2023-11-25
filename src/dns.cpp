@@ -43,7 +43,7 @@ addrinfo::addrinfo(const ::addrinfo& caddr) noexcept :
     std::memcpy(std::addressof(this->ai_addr), caddr.ai_addr, caddr.ai_addrlen);
 }
 
-[[nodiscard]] const std::expected<std::vector<addrinfo>, n3::error::code> getaddrinfo(
+[[nodiscard]] const std::expected<std::vector<addrinfo>, n3::error::ErrorCode> getaddrinfo(
         const std::optional<std::string>& node,
         const std::optional<std::string>& service,
         const std::optional<::addrinfo>& hints) {
@@ -52,7 +52,7 @@ addrinfo::addrinfo(const ::addrinfo& caddr) noexcept :
          * Per glibc documentation:
          * Either node or service, but not both, may be NULL.
          */
-        return std::unexpected(n3::error::code::invalid_argument);
+        return std::unexpected(error::get_error_code_from_errno(EINVAL));
     }
 
     const std::unique_ptr<::addrinfo *, void (*)(::addrinfo **)> addr_list{
@@ -67,7 +67,7 @@ addrinfo::addrinfo(const ::addrinfo& caddr) noexcept :
             hints.transform([](const auto& hints_arg) { return &hints_arg; }).value_or(nullptr),
             addr_list.get());
     if (ret != 0) {
-        return std::unexpected(n3::error::get_error_code_from_getaddrinfo_err(ret, errno));
+        return std::unexpected(error::get_error_code_from_getaddrinfo_err(ret, errno));
     }
     assert(addr_list);
 

@@ -13,10 +13,10 @@ namespace n3::linux {
 
 [[nodiscard]] constexpr size_t get_sockopt_size(const int level, const int optname) noexcept;
 
-std::expected<void, error::code> setsockopt(
+std::expected<void, error::ErrorCode> setsockopt(
         const int sock, const int level, const int option, const RefBuffer option_value) noexcept;
 
-std::expected<std::span<std::byte>, error::code> getsockopt(
+std::expected<std::span<std::byte>, error::ErrorCode> getsockopt(
         const int sock, const int level, const int option, const RefBuffer option_buf) noexcept;
 
 //TODO: Convert to use RefMultiBuffer
@@ -26,7 +26,7 @@ std::expected<size_t, int> writev(const int fd, std::span<std::span<std::byte>> 
 std::expected<size_t, int> send(const int sock, const RefBuffer buf, const int flags) noexcept;
 
 template<n3::net::AddressType T>
-std::expected<size_t, error::code> sendto(
+std::expected<size_t, error::ErrorCode> sendto(
         const int sock, const RefBuffer buf, const T& addr, const int flags) noexcept {
     const auto raw_addr = addr.to_sockaddr();
     const auto ret = ::sendto(sock,
@@ -46,16 +46,16 @@ std::expected<size_t, int> sendmsg(const int sock, const ::msghdr& msg, const in
 std::expected<size_t, int> recv(const int sock, RefBuffer buf, const int flags) noexcept;
 
 std::expected<std::pair<size_t, std::variant<n3::net::v4::address, n3::net::v6::address>>,
-        error::code>
+        error::ErrorCode>
         recvfrom(const int sock, RefBuffer buf, const int flags) noexcept;
 
-std::expected<std::pair<size_t, ::msghdr>, error::code> recvmsg(
+std::expected<std::pair<size_t, ::msghdr>, error::ErrorCode> recvmsg(
         const int sock, const int flags) noexcept;
 
-std::expected<long, error::code> sysconf(const int name) noexcept;
+std::expected<long, error::ErrorCode> sysconf(const int name) noexcept;
 
 template<n3::net::AddressType T>
-std::expected<void, error::code> connect(const int sock, const T& addr) noexcept {
+std::expected<void, error::ErrorCode> connect(const int sock, const T& addr) noexcept {
     const auto raw_addr = addr.to_sockaddr();
     const auto ret = ::connect(
             sock, dynamic_cast<::sockaddr *>(std::addressof(raw_addr)), sizeof(raw_addr));

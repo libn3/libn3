@@ -44,7 +44,7 @@ public:
     //Keep this type an interface instead of a full virtual base class
     virtual ~socket() = 0;
 
-    std::expected<void, error::code> listen(const int sock) const noexcept {
+    std::expected<void, error::ErrorCode> listen(const int sock) const noexcept {
         //Values above SOMAXCONN are truncated
         //As of linux 5.4, default is 4096, older versions use 128
         static constexpr int backlog = SOMAXCONN;
@@ -59,7 +59,7 @@ public:
     //TODO: Verify that you can construct a callback object with the template types/args
     //TODO: Do I need to make the noexcept qualifier here conditional on something?
     template<typename F, typename... Args>
-        requires std::invocable<F, std::expected<size_t, error::code>, Args...>
+        requires std::invocable<F, std::expected<size_t, error::ErrorCode>, Args...>
     void send(const int sock, const RefBuffer buf, const int flags, F&& cb_func, Args&&...cb_args)
             const noexcept {
         //TODO: Verify that any child types that override match the same signature
@@ -71,7 +71,7 @@ public:
         //TODO: I hate this check, requires error code design change to be more user friendly
         if (!ret.has_value() && ret.error() == EAGAIN) {
             //TODO: Save the callback in the event loop somehow for future use when complete
-            [[maybe_unused]] n3::runtime::callback<std::expected<size_t, error::code>> cb{
+            [[maybe_unused]] n3::runtime::callback<std::expected<size_t, error::ErrorCode>> cb{
                     std::forward<F&&>(cb_func), std::forward<Args&&...>(cb_args...)};
             return;
         }
@@ -81,7 +81,7 @@ public:
 
     //TODO: What is the plan with socket object syscall wrapper return types?
     //TODO: Is everything here just returning void and always using a callback?
-    std::expected<size_t, error::code> recv(
+    std::expected<size_t, error::ErrorCode> recv(
             const int sock, RefBuffer buf, const int flags) const noexcept {
         if constexpr (std::is_member_function_pointer_v<decltype(&T::recv)>) {
             return static_cast<T const *>(this)->recv(sock, buf, flags);
@@ -90,7 +90,7 @@ public:
     }
 
     template<n3::net::AddressType U>
-    std::expected<void, error::code> bind(const int sock, const U& addr) const noexcept {
+    std::expected<void, error::ErrorCode> bind(const int sock, const U& addr) const noexcept {
         if constexpr (std::is_member_function_pointer_v<decltype(&T::template bind<U>)>) {
             return static_cast<T const *>(this)->template bind<U>(sock, addr);
         }
@@ -98,7 +98,7 @@ public:
     }
 
     template<n3::net::AddressType U>
-    std::expected<void, error::code> connect(const int sock, const U& addr) const noexcept {
+    std::expected<void, error::ErrorCode> connect(const int sock, const U& addr) const noexcept {
         if constexpr (std::is_member_function_pointer_v<decltype(&T::template connect<U>)>) {
             return static_cast<T const *>(this)->template connect<U>(sock, addr);
         }
@@ -106,7 +106,7 @@ public:
     }
 
     std::expected<std::pair<int, std::variant<n3::net::v4::address, n3::net::v6::address>>,
-            error::code>
+            error::ErrorCode>
             accept(const int sock) const noexcept {
         if constexpr (std::is_member_function_pointer_v<decltype(&T::accept)>) {
             return static_cast<T const *>(this)->accept(sock);
@@ -115,7 +115,7 @@ public:
     }
 
     //TODO: Type check/verify sizes against the size of the buffer
-    std::expected<void, error::code> setsockopt(const int sock,
+    std::expected<void, error::ErrorCode> setsockopt(const int sock,
             const int level,
             const int option,
             const RefBuffer option_value) const noexcept {
@@ -126,7 +126,7 @@ public:
     }
 
     //TODO: Type check/verify sizes against the size of the buffer
-    std::expected<std::span<std::byte>, error::code> getsockopt(const int sock,
+    std::expected<std::span<std::byte>, error::ErrorCode> getsockopt(const int sock,
             const int level,
             const int option,
             const RefBuffer option_buf) const noexcept {
