@@ -370,7 +370,8 @@ std::expected<std::span<std::byte>, error::ErrorCode> getsockopt(
     return option_buf.as_span().first(optlen);
 }
 
-std::expected<size_t, int> readv(const int fd, std::span<std::span<std::byte>> bufs) noexcept {
+std::expected<size_t, error::ErrorCode> readv(
+        const int fd, std::span<std::span<std::byte>> bufs) noexcept {
     //Validate assumption about the length of the caller
     //TODO: Set this up at compile time with templates instead of an application level check
     assert(bufs.size() <= IOV_MAX);
@@ -384,13 +385,14 @@ std::expected<size_t, int> readv(const int fd, std::span<std::span<std::byte>> b
 
     const auto ret = readv(fd, converted_bufs.data(), bufs.size());
     if (ret == -1) {
-        return std::unexpected(errno);
+        return std::unexpected(error::get_error_code_from_errno(errno));
     }
     assert(ret >= 0);
     return ret;
 }
 
-std::expected<size_t, int> writev(const int fd, std::span<std::span<std::byte>> bufs) noexcept {
+std::expected<size_t, error::ErrorCode> writev(
+        const int fd, std::span<std::span<std::byte>> bufs) noexcept {
     //Validate assumption about the length of the caller
     //TODO: Set this up at compile time with templates instead of an application level check
     assert(bufs.size() <= IOV_MAX);
@@ -404,24 +406,26 @@ std::expected<size_t, int> writev(const int fd, std::span<std::span<std::byte>> 
 
     const auto ret = writev(fd, converted_bufs.data(), bufs.size());
     if (ret == -1) {
-        return std::unexpected(errno);
+        return std::unexpected(error::get_error_code_from_errno(errno));
     }
     assert(ret >= 0);
     return ret;
 }
 
-std::expected<size_t, int> send(const int sock, const RefBuffer buf, const int flags) noexcept {
+std::expected<size_t, error::ErrorCode> send(
+        const int sock, const RefBuffer buf, const int flags) noexcept {
     const auto ret = ::send(sock, buf.as_span().data(), buf.as_span().size_bytes(), flags);
     if (ret == -1) {
-        return std::unexpected(errno);
+        return std::unexpected(error::get_error_code_from_errno(errno));
     }
     return ret;
 }
 
-std::expected<size_t, int> sendmsg(const int sock, const ::msghdr& msg, const int flags) noexcept {
+std::expected<size_t, error::ErrorCode> sendmsg(
+        const int sock, const ::msghdr& msg, const int flags) noexcept {
     const auto ret = ::sendmsg(sock, &msg, flags);
     if (ret == -1) {
-        return std::unexpected(errno);
+        return std::unexpected(error::get_error_code_from_errno(errno));
     }
     return ret;
 }
@@ -448,10 +452,11 @@ std::expected<long, error::ErrorCode> sysconf(const int name) noexcept {
     return ret;
 }
 
-std::expected<size_t, int> recv(const int sock, RefBuffer buf, const int flags) noexcept {
+std::expected<size_t, error::ErrorCode> recv(
+        const int sock, RefBuffer buf, const int flags) noexcept {
     const auto ret = ::recv(sock, buf.data(), buf.size(), flags);
     if (ret == -1) {
-        return std::unexpected(errno);
+        return std::unexpected(error::get_error_code_from_errno(errno));
     }
     return ret;
 }
@@ -486,22 +491,23 @@ std::expected<std::pair<size_t, ::msghdr>, error::ErrorCode> recvmsg(
     return {{ret, msg}};
 }
 
-std::expected<void, int> listen(const int sock, const int backlog) noexcept {
+std::expected<void, error::ErrorCode> listen(const int sock, const int backlog) noexcept {
     const auto ret = ::listen(sock, backlog);
     if (ret == -1) {
-        return std::unexpected(errno);
+        return std::unexpected(error::get_error_code_from_errno(errno));
     }
     return {};
 }
 
-std::expected<std::pair<int, std::variant<n3::net::v4::address, n3::net::v6::address>>, int> accept(
-        const int sock) noexcept {
+std::expected<std::pair<int, std::variant<n3::net::v4::address, n3::net::v6::address>>,
+        error::ErrorCode>
+        accept(const int sock) noexcept {
     ::sockaddr_storage recv_addr{};
     socklen_t recv_addr_len = sizeof(recv_addr);
 
     const auto ret = ::accept(sock, reinterpret_cast<::sockaddr *>(&recv_addr), &recv_addr_len);
     if (ret == -1) {
-        return std::unexpected(errno);
+        return std::unexpected(error::get_error_code_from_errno(errno));
     }
     const auto address = n3::net::sockaddr_to_address(recv_addr);
 

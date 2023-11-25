@@ -13,6 +13,7 @@
 namespace n3::net {
 
 //Concept to constrain C style sockaddr types to our custom wrapper types
+//TODO: Use a variant type instead of a concept plus templates when handling multi-family address values?
 template<typename T>
 concept AddressType = requires(T addr) {
     { addr.to_sockaddr() };

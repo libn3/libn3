@@ -10,6 +10,8 @@
 #include <utility>
 #include <variant>
 
+#include "buffer.h"
+
 /*
  * TODO: I don't like this design for error codes, need a better one that's more ergonomic
  * Issue is that there's too much complexity being condensed down in a way that isn't reasonable
@@ -31,15 +33,42 @@ namespace n3::error {
 enum class posix_error;
 enum class gai_error;
 
+struct posix_error_type {};
+struct gai_error_type {};
+
+struct posix_error_t {
+    explicit posix_error_t() = default;
+};
+inline constexpr posix_error_t posix_error_arg{};
+
+struct gai_error_t {
+    explicit gai_error_t() = default;
+};
+inline constexpr gai_error_t gai_error_arg{};
+
 class ErrorCode {
     //TODO: Do I need application errors, and do they need to be different from posix?
     std::variant<posix_error, gai_error> underlying;
 
 public:
     constexpr ErrorCode() noexcept = default;
-    constexpr ErrorCode(const posix_error err_arg) noexcept : underlying{err_arg} {
+
+    //Constructor for anything that can be used to create the underlying variant
+    template<typename... Args>
+        requires NoThrowConstructible<decltype(underlying), Args...>
+    constexpr ErrorCode(Args&&...args) noexcept :
+            underlying{std::forward<decltype(args)>(args)...} {
     }
-    constexpr ErrorCode(const gai_error err_arg) noexcept : underlying{err_arg} {
+
+    //Explicit error type constructor for posix errors using a trivial sentinel type
+    template<std::integral T>
+    constexpr ErrorCode(const posix_error_t, const T err_arg) noexcept :
+            ErrorCode{posix_error{err_arg}} {
+    }
+    //Explicit error type constructor for getaddrinfo errors using a trivial sentinel type
+    template<std::integral T>
+    constexpr ErrorCode(const gai_error_t, const T err_arg) noexcept :
+            ErrorCode{gai_error{err_arg}} {
     }
 
     constexpr ErrorCode(const ErrorCode&) noexcept = default;

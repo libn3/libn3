@@ -38,28 +38,29 @@ class RefBuffer : public std::ranges::view_interface<RefBuffer> {
     std::span<std::byte> underlying;
 
 public:
-    RefBuffer() noexcept = default;
+    constexpr RefBuffer() noexcept = default;
 
     //Constructor for anything that can normally make an std::span<std::byte>
     template<typename... Args>
         requires NoThrowConstructible<decltype(underlying), Args...>
-    RefBuffer(Args&&...args) noexcept : underlying{std::forward<decltype(args)>(args)...} {
+    constexpr RefBuffer(Args&&...args) noexcept :
+            underlying{std::forward<decltype(args)>(args)...} {
     }
 
     //Constructor for other types of spans that can be converted to a span of bytes
     template<typename T>
-    RefBuffer(std::span<T>&& sp) noexcept :
+    constexpr RefBuffer(std::span<T>&& sp) noexcept :
             underlying{std::forward<decltype(sp)>(std::as_writable_bytes(sp))} {
     }
 
     //Constructor for arbitrary type pointers which can always be aliased by std::byte
     template<typename T>
-    RefBuffer(T *const buf, const size_t len) noexcept :
+    constexpr RefBuffer(T *const buf, const size_t len) noexcept :
             underlying{reinterpret_cast<std::byte *>(buf), len} {
     }
 
     //Constructor for iovecs which are basically just a span of bytes
-    RefBuffer(const struct iovec iov) noexcept :
+    constexpr RefBuffer(const struct iovec iov) noexcept :
             underlying{static_cast<std::byte *>(iov.iov_base), iov.iov_len} {
     }
 

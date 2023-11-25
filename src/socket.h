@@ -52,7 +52,7 @@ public:
         if constexpr (std::is_member_function_pointer_v<decltype(&T::listen)>) {
             return static_cast<T const *>(this)->listen(sock);
         }
-        return n3::linux::listen(sock, backlog).transform_error(&error::get_error_code_from_errno);
+        return n3::linux::listen(sock, backlog);
     }
 
     //TODO: Probably needs a callback invocable concept that replicates the bind_front arg stacking
@@ -68,15 +68,22 @@ public:
         }
         auto&& ret = n3::linux::send(sock, buf, flags);
 
-        //TODO: I hate this check, requires error code design change to be more user friendly
-        if (!ret.has_value() && ret.error() == EAGAIN) {
+        //Call the callback straight away if things immediately succeed
+        if (ret.has_value()) {
+            std::invoke(cb_func, ret, cb_args...);
+            return;
+        }
+
+        assert(!ret.has_value());
+
+        if (ret.error() == error::posix_error{EAGAIN}) {
             //TODO: Save the callback in the event loop somehow for future use when complete
             [[maybe_unused]] n3::runtime::callback<std::expected<size_t, error::ErrorCode>> cb{
                     std::forward<F&&>(cb_func), std::forward<Args&&...>(cb_args...)};
             return;
         }
-        //Either a successful return code or abnormal error, either way, call the callback now
-        std::invoke(cb_func, ret.transform_error(&error::get_error_code_from_errno), cb_args...);
+        //Error value with no special meaning, call the callback immediately
+        std::invoke(cb_func, ret, cb_args...);
     }
 
     //TODO: What is the plan with socket object syscall wrapper return types?
@@ -86,7 +93,7 @@ public:
         if constexpr (std::is_member_function_pointer_v<decltype(&T::recv)>) {
             return static_cast<T const *>(this)->recv(sock, buf, flags);
         }
-        return n3::linux::recv(sock, buf, flags).transform_error(&error::get_error_code_from_errno);
+        return n3::linux::recv(sock, buf, flags);
     }
 
     template<n3::net::AddressType U>
@@ -94,7 +101,7 @@ public:
         if constexpr (std::is_member_function_pointer_v<decltype(&T::template bind<U>)>) {
             return static_cast<T const *>(this)->template bind<U>(sock, addr);
         }
-        return n3::linux::bind<U>(sock, addr).transform_error(&error::get_error_code_from_errno);
+        return n3::linux::bind<U>(sock, addr);
     }
 
     template<n3::net::AddressType U>
@@ -111,7 +118,7 @@ public:
         if constexpr (std::is_member_function_pointer_v<decltype(&T::accept)>) {
             return static_cast<T const *>(this)->accept(sock);
         }
-        return n3::linux::accept(sock).transform_error(&error::get_error_code_from_errno);
+        return n3::linux::accept(sock);
     }
 
     //TODO: Type check/verify sizes against the size of the buffer
