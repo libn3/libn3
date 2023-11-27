@@ -78,6 +78,27 @@ public:
 
         if (ret.error() == error::posix_error{EAGAIN}) {
             //TODO: Save the callback in the event loop somehow for future use when complete
+            /*
+             * TODO: Before I can figure out how to store async context data,
+             * I need to figure out how to handle multi-read/write calls
+             * What happens if someone calls TcpSocket::read 3 times in a row?
+             * As well as how that differs between single syscall wrapper functions, and composed
+             * multi-syscall functions (read_once() vs read() vs read_exact())
+             *
+             * Also needs to generalize to stuff like bind(), connect(), and accept(), not just
+             * read and write
+             *
+             * Do we:
+             *  - Forbid it entirely (UB)
+             *  - Check for it (return an error)
+             *  - Replace previous slot (dedicated read/write handler is registered with IO loop)
+             *  - Queue them up back-to-back
+             *       - on a smart read() wrapper, does that mean a full EAGAIN exhaustion per call?
+             *  - Try and cleverly merge them under the hood
+             *       - growing buffer,
+             *       - span merging
+             *       - transparently switch to vectored read/write syscalls (multiple refbuffers queued up)
+             */
             [[maybe_unused]] n3::runtime::callback<std::expected<size_t, error::ErrorCode>> cb{
                     std::forward<F&&>(cb_func), std::forward<Args&&...>(cb_args...)};
             return;

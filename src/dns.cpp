@@ -40,7 +40,7 @@ addrinfo::addrinfo(const ::addrinfo& caddr) noexcept :
         ai_protocol{caddr.ai_protocol},
         ai_addr{},
         ai_canonname{caddr.ai_canonname} {
-    std::memcpy(std::addressof(this->ai_addr), caddr.ai_addr, caddr.ai_addrlen);
+    std::memcpy(&this->ai_addr, caddr.ai_addr, caddr.ai_addrlen);
 }
 
 [[nodiscard]] const std::expected<std::vector<addrinfo>, n3::error::ErrorCode> getaddrinfo(
