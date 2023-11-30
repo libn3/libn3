@@ -43,11 +43,11 @@ public:
     epoll_ctx& operator=(epoll_ctx&&) noexcept = default;
 
     //TODO: Strongly type the fd instead of using int
-    [[nodiscard]] auto add(const int fd) noexcept -> const std::expected<void, int>;
-    [[nodiscard]] auto remove(const int fd) noexcept -> const std::expected<void, int>;
+    [[nodiscard]] auto add(const int fd) noexcept -> const std::expected<void, error::ErrorCode>;
+    [[nodiscard]] auto remove(const int fd) noexcept -> const std::expected<void, error::ErrorCode>;
     //TODO: Wrap the raw epoll_event struct into my own type?
     [[nodiscard]] auto wait(const std::optional<std::chrono::milliseconds>& timeout_ms) noexcept
-            -> const std::expected<std::span<struct epoll_event>, int>;
+            -> const std::expected<std::span<struct epoll_event>, error::ErrorCode>;
 };
 
 } // namespace n3::linux::epoll

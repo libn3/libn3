@@ -2,12 +2,16 @@
 
 #include <expected>
 
+#include "buffer.h"
 #include "epoll.h"
 #include "error.h"
 
 namespace n3::linux::epoll {
 class epoll_executor {
     epoll_ctx epoll;
+    bool active;
+
+    n3::PageBuffer read_buffer;
 
 public:
     epoll_executor();
@@ -20,7 +24,7 @@ public:
      *  - Run (main loop invocation, may want a run_once split off)
      *  - Registering read/write events and callbacks (Done in an init function, or per-call?)
      *  - Memory buffer to handle data reads that we can return to the user
-     *  - Need a main TCP socket wrapper to properly use the add() function (IP/port translation, DNS lookup, etc)
      */
+    void run();
 };
 }; // namespace n3::linux::epoll

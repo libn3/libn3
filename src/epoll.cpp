@@ -32,7 +32,8 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
     descriptors.reserve(32768);
 }
 
-[[nodiscard]] auto epoll_ctx::add(const int fd) noexcept -> const std::expected<void, int> {
+[[nodiscard]] auto epoll_ctx::add(const int fd) noexcept
+        -> const std::expected<void, error::ErrorCode> {
     static constexpr auto EVENT_MASK = (EPOLLIN | EPOLLOUT | EPOLLET | EPOLLEXCLUSIVE);
     struct epoll_event event {
         .events = EVENT_MASK, .data{.ptr = this},
@@ -40,16 +41,17 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
 
     const auto ret = epoll_ctl(this->efd.efd, EPOLL_CTL_ADD, fd, &event);
     if (ret == -1) {
-        return std::unexpected(errno);
+        return std::unexpected(error::get_error_code_from_errno(errno));
     }
     this->descriptors.emplace_back(fd);
     return {};
 }
 
-[[nodiscard]] auto epoll_ctx::remove(const int fd) noexcept -> const std::expected<void, int> {
+[[nodiscard]] auto epoll_ctx::remove(const int fd) noexcept
+        -> const std::expected<void, error::ErrorCode> {
     const auto ret = epoll_ctl(this->efd.efd, EPOLL_CTL_DEL, fd, nullptr);
     if (ret == -1) {
-        return std::unexpected(errno);
+        return std::unexpected(error::get_error_code_from_errno(errno));
     }
     this->descriptors.emplace_back(fd);
     return {};
@@ -57,20 +59,20 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
 
 [[nodiscard]] auto epoll_ctx::wait(
         const std::optional<std::chrono::milliseconds>& timeout_ms) noexcept
-        -> const std::expected<std::span<struct epoll_event>, int> {
+        -> const std::expected<std::span<struct epoll_event>, error::ErrorCode> {
     //Zero will block forever if the timeout optional is empty
     const int epoll_timeout = timeout_ms.value_or(std::chrono::milliseconds{0}).count();
     const auto ret
             = epoll_wait(this->efd.efd, this->events.data(), this->events.size(), epoll_timeout);
     if (ret == -1) {
         if (errno == EINTR) {
-            return std::unexpected(ETIMEDOUT);
+            return std::unexpected(error::get_error_code_from_errno(ETIMEDOUT));
         }
-        return std::unexpected(errno);
+        return std::unexpected(error::get_error_code_from_errno(errno));
     }
     if (ret == 0) {
         //Timeout
-        return std::unexpected(ETIMEDOUT);
+        return std::unexpected(error::get_error_code_from_errno(ETIMEDOUT));
     }
     assert(ret > 0 && static_cast<decltype(this->events.size())>(ret) <= this->events.size());
 

@@ -26,7 +26,7 @@ void runtime_st::run() {
         const auto events = this->epoll.wait(std::nullopt);
         if (!events.has_value()) {
             const auto err = events.error();
-            if (err == ETIMEDOUT) {
+            if (err == error::posix_error{ETIMEDOUT}) {
                 continue;
             }
             //TODO: How to handle general epoll errors?
