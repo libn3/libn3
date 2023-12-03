@@ -49,12 +49,14 @@ public:
 
     //Constructor for other types of spans that can be converted to a span of bytes
     template<typename T>
+        requires std::is_trivially_copyable_v<T>
     constexpr RefBuffer(std::span<T>&& sp) noexcept :
             underlying{std::forward<decltype(sp)>(std::as_writable_bytes(sp))} {
     }
 
     //Constructor for arbitrary type pointers which can always be aliased by std::byte
     template<typename T>
+        requires std::is_trivially_copyable_v<T>
     constexpr RefBuffer(T *const buf, const size_t len) noexcept :
             underlying{reinterpret_cast<std::byte *>(buf), len} {
     }
