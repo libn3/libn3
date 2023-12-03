@@ -26,5 +26,6 @@ public:
      *  - Memory buffer to handle data reads that we can return to the user
      */
     void run();
+    void run_once();
 };
 }; // namespace n3::linux::epoll

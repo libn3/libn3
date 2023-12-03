@@ -20,7 +20,7 @@ class addrinfo {
     int ai_socktype;
     int ai_protocol;
     //TODO: Worth having my own wrapper of a variant over the sockaddr types?
-    struct sockaddr_storage ai_addr;
+    ::sockaddr_storage ai_addr;
     std::string ai_canonname;
 
 public:

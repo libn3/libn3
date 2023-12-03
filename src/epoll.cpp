@@ -29,13 +29,13 @@ epoll_handle::~epoll_handle() noexcept {
 }
 
 epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
-    descriptors.reserve(32768);
+    descriptors.reserve(epoll_ctx::EVENT_BUFFER_SIZE);
 }
 
 [[nodiscard]] auto epoll_ctx::add(const int fd) noexcept
         -> const std::expected<void, error::ErrorCode> {
     static constexpr auto EVENT_MASK = (EPOLLIN | EPOLLOUT | EPOLLET | EPOLLEXCLUSIVE);
-    struct epoll_event event {
+    ::epoll_event event {
         .events = EVENT_MASK, .data{.ptr = this},
     };
 
@@ -58,8 +58,8 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
 }
 
 [[nodiscard]] auto epoll_ctx::wait(
-        const std::optional<std::chrono::milliseconds>& timeout_ms) noexcept
-        -> const std::expected<std::span<struct epoll_event>, error::ErrorCode> {
+        const std::optional<const std::chrono::milliseconds>& timeout_ms) noexcept
+        -> const std::expected<std::span<const ::epoll_event>, error::ErrorCode> {
     //Zero will block forever if the timeout optional is empty
     const int epoll_timeout = timeout_ms.value_or(std::chrono::milliseconds{0}).count();
     const auto ret
@@ -76,7 +76,7 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
     }
     assert(ret > 0 && static_cast<decltype(this->events.size())>(ret) <= this->events.size());
 
-    return std::span<struct epoll_event>{this->events.data(), static_cast<size_t>(ret)};
+    return std::span<const ::epoll_event>{this->events.data(), static_cast<size_t>(ret)};
 }
 
 } // namespace n3::linux::epoll

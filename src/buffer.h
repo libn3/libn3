@@ -62,7 +62,7 @@ public:
     }
 
     //Constructor for iovecs which are basically just a span of bytes
-    constexpr RefBuffer(const struct iovec iov) noexcept :
+    constexpr RefBuffer(const ::iovec iov) noexcept :
             underlying{static_cast<std::byte *>(iov.iov_base), iov.iov_len} {
     }
 
@@ -74,15 +74,14 @@ public:
         return this->underlying.size_bytes();
     }
 
-    [[nodiscard]] constexpr auto as_iovec() const noexcept -> struct iovec {
+    [[nodiscard]] constexpr auto as_iovec() const noexcept -> ::iovec {
         return {
                 .iov_base = this->underlying.data(),
                 .iov_len = this->underlying.size_bytes(),
         };
     }
 
-    [[nodiscard]] constexpr auto
-            as_span() const noexcept -> std::span<std::byte> {
+    [[nodiscard]] constexpr auto as_span() const noexcept -> std::span<std::byte> {
         return underlying;
     }
 
@@ -161,7 +160,7 @@ public:
     }
 
     //TODO: How to do this properly?
-    //[[nodiscard]] constexpr auto as_iovec() noexcept -> struct iovec {
+    //[[nodiscard]] constexpr auto as_iovec() noexcept -> ::iovec {
     //    return {
     //            .iov_base = this->buffers.buffers(),
     //            .iov_len = this->buffers.size_bytes(),
@@ -176,7 +175,7 @@ static_assert(std::is_nothrow_copy_assignable_v<RefMultiBuffer<IOV_MAX>>);
 static_assert(std::is_nothrow_move_assignable_v<RefMultiBuffer<IOV_MAX>>);
 
 //TODO: This may be useful as an optimization, std::span equivalent with std::byte* didn't work
-static_assert(std::is_layout_compatible_v<struct iovec, std::pair<void *, size_t>>);
+static_assert(std::is_layout_compatible_v<::iovec, std::pair<void *, size_t>>);
 
 /*
  * A simple memory page buffer that checks the page size at runtime

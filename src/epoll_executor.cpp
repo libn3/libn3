@@ -17,21 +17,24 @@ epoll_executor::epoll_executor() : epoll{} {
     return this->epoll.add(fd);
 }
 
+void epoll_executor::run_once() {
+    const auto events = this->epoll.wait();
+    if (!events.has_value()) {
+        const auto err = events.error();
+        if (err == error::posix_error{ETIMEDOUT}) {
+            return;
+        }
+        //TODO: How to handle general epoll errors?
+        return;
+    }
+    assert(events.has_value());
+    //TODO: Where and how am I managing the epoll return values?
+}
+
 void epoll_executor::run() {
     while (this->active) {
-        const auto events = this->epoll.wait(std::nullopt);
-        if (!events.has_value()) {
-            const auto err = events.error();
-            if (err == error::posix_error{ETIMEDOUT}) {
-                continue;
-            }
-            //TODO: How to handle general epoll errors?
-            continue;
-        }
-        assert(events.has_value());
-        //TODO: Where and how am I managing the epoll return values?
+        this->run_once();
     }
-    return;
 }
 
 }; // namespace n3::linux::epoll

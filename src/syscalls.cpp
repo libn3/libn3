@@ -44,7 +44,7 @@ namespace n3::linux {
                     case SO_ATTACH_FILTER:
                         [[fallthrough]];
                     case SO_ATTACH_REUSEPORT_CBPF:
-                        return sizeof(struct sock_fprog);
+                        return sizeof(::sock_fprog);
                     case SO_ATTACH_BPF:
                         [[fallthrough]];
                     case SO_ATTACH_REUSEPORT_EBPF:
@@ -73,7 +73,7 @@ namespace n3::linux {
                         //C style "int as bool" semantics
                         return sizeof(int);
                     case SO_LINGER:
-                        return sizeof(struct linger);
+                        return sizeof(::linger);
                     case SO_LOCK_FILTER:
                         //C style "int as bool" semantics
                         return sizeof(int);
@@ -88,7 +88,7 @@ namespace n3::linux {
                     case SO_PEEK_OFF:
                         return sizeof(int);
                     case SO_PEERCRED:
-                        return sizeof(struct ucred);
+                        return sizeof(::ucred);
                     case SO_PEERSEC:
                         return sizeof(int);
                     case SO_PRIORITY:
@@ -106,7 +106,7 @@ namespace n3::linux {
                     case SO_RCVTIMEO:
                         [[fallthrough]];
                     case SO_SNDTIMEO:
-                        return sizeof(struct timeval);
+                        return sizeof(::timeval);
                     case SO_REUSEADDR:
                         //C style "int as bool" semantics
                         return sizeof(int);
@@ -144,9 +144,9 @@ namespace n3::linux {
                     case IP_DROP_MEMBERSHIP:
                         [[fallthrough]];
                     case IP_DROP_SOURCE_MEMBERSHIP:
-                        return sizeof(struct ip_mreqn);
+                        return sizeof(::ip_mreqn);
                     case IP_ADD_SOURCE_MEMBERSHIP:
-                        return sizeof(struct ip_mreq_source);
+                        return sizeof(::ip_mreq_source);
                     case IP_BIND_ADDRESS_NO_PORT:
                         //C style "int as bool" semantics
                         return sizeof(int);
@@ -159,7 +159,7 @@ namespace n3::linux {
                     case IP_LOCAL_PORT_RANGE:
                         return sizeof(uint32_t);
                     case IP_MSFILTER:
-                        return sizeof(struct ip_msfilter);
+                        return sizeof(::ip_msfilter);
                     case IP_MTU:
                         return sizeof(int);
                     case IP_MTU_DISCOVER:
@@ -168,7 +168,7 @@ namespace n3::linux {
                         //C style "int as bool" semantics
                         return sizeof(int);
                     case IP_MULTICAST_IF:
-                        return sizeof(struct ip_mreqn);
+                        return sizeof(::ip_mreqn);
                     case IP_MULTICAST_LOOP:
                         //C style "int as bool" semantics
                         return sizeof(int);
@@ -183,7 +183,7 @@ namespace n3::linux {
                         //Not supported
                         std::unreachable();
                     case IP_PKTINFO:
-                        return sizeof(struct in_pktinfo);
+                        return sizeof(::in_pktinfo);
                     case IP_RECVERR:
                         //C style "int as bool" semantics
                         return sizeof(int);
@@ -214,7 +214,7 @@ namespace n3::linux {
                     case IP_TTL:
                         return sizeof(int);
                     case IP_UNBLOCK_SOURCE:
-                        return sizeof(struct ip_mreq_source);
+                        return sizeof(::ip_mreq_source);
                     case SO_PEERSEC:
                         //Not supported
                         std::unreachable();
@@ -231,7 +231,7 @@ namespace n3::linux {
                     case IPV6_ADD_MEMBERSHIP:
                         [[fallthrough]];
                     case IPV6_DROP_MEMBERSHIP:
-                        return sizeof(struct ipv6_mreq);
+                        return sizeof(::ipv6_mreq);
                     case IPV6_MTU:
                         //getsockopt returns an integer
                         //setsockopt expects a pointer to an integer
@@ -301,7 +301,7 @@ namespace n3::linux {
                              */
                         return 5 * sizeof(unsigned char);
                     case TCP_INFO:
-                        return sizeof(struct tcp_info);
+                        return sizeof(::tcp_info);
                     case TCP_USER_TIMEOUT:
                         return sizeof(unsigned int);
                     case TCP_CORK:
@@ -376,7 +376,7 @@ std::expected<size_t, error::ErrorCode> readv(
     //TODO: Set this up at compile time with templates instead of an application level check
     assert(bufs.size() <= IOV_MAX);
 
-    std::array<struct iovec, IOV_MAX> converted_bufs;
+    std::array<::iovec, IOV_MAX> converted_bufs;
     //Convert spans to iovecs by copying to a stack buffer
     //There's probably a way of converting things without a copy...
     std::transform(bufs.cbegin(), bufs.cend(), converted_bufs.begin(), [](const auto vec) {
@@ -397,7 +397,7 @@ std::expected<size_t, error::ErrorCode> writev(
     //TODO: Set this up at compile time with templates instead of an application level check
     assert(bufs.size() <= IOV_MAX);
 
-    std::array<struct iovec, IOV_MAX> converted_bufs;
+    std::array<::iovec, IOV_MAX> converted_bufs;
     //Convert spans to iovecs by copying to a stack buffer
     //There's probably a way of converting things without a copy...
     std::transform(bufs.cbegin(), bufs.cend(), converted_bufs.begin(), [](const auto vec) {
