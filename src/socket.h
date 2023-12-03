@@ -38,6 +38,13 @@ namespace n3::net::linux {
  * the event loop we're designing the library for
  */
 
+/*
+ * TODO: A lot of functions here take an int fd handle, but real wrapper types won't be doing that
+ * Do I need to restructure things to fetch it properly or change the whole state/interface type setup?
+ * If a socket interface needs to store data, then you're just doing OOP like normal with all the issues
+ * I want any inheritance to be CRTP interfaces with zero state, or pursue something else entirely
+ */
+
 template<typename T>
 class socket {
 public:
@@ -66,6 +73,13 @@ public:
         if constexpr (std::is_member_function_pointer_v<decltype(&T::send)>) {
             return static_cast<T const *>(this)->send(sock, buf, flags);
         }
+        /*
+         * TODO: This is actually wrong given the current "read/write event queue per socket" design
+         * Attempting an immediate send would reorder data since there may be pending writes already
+         * queued up that need to be sent first
+         * So instead of calling the syscall here directly, this should probably call some higher
+         * level wrapper that flushes the pending write queue
+         */
         auto&& ret = n3::linux::send(sock, buf, flags);
 
         //Call the callback straight away if things immediately succeed
