@@ -35,6 +35,13 @@ public:
 };
 
 class RefBuffer : public std::ranges::view_interface<RefBuffer> {
+    /*
+     * TODO: Use an iovec/std::pair<std::byte *, size_t> instead of a span
+     * This makes it usable directly for iovec syscalls, and makes the multibuffer make more sense
+     * Otherwise, the multibuffer needs to do some conversions to be used or uses the iovec/pair
+     * version internally.
+     * And now you have a RefMultiBuffer not using vector of RefBuffers, which feels so wrong!
+     */
     std::span<std::byte> underlying;
 
 public:
@@ -114,20 +121,56 @@ static_assert(std::is_nothrow_move_constructible_v<RefBuffer>);
 static_assert(std::is_nothrow_copy_assignable_v<RefBuffer>);
 static_assert(std::is_nothrow_move_assignable_v<RefBuffer>);
 
-template<size_t size>
-class RefMultiBuffer {
-    std::array<RefBuffer, size> buffers;
-    //Don't bother with making a multibuffer larger than a single syscall can take
-    //TODO: Concept constrain the class rather than static assert this?
-    static_assert(size <= IOV_MAX);
+class RefMultiBuffer : public std::ranges::view_interface<RefMultiBuffer> {
+    std::vector<RefBuffer> buffers;
 
 public:
-    RefMultiBuffer() noexcept = default;
+    //Default constructor
+    constexpr RefMultiBuffer() noexcept = default;
 
-    //Constructor for anything that can normally make an std::span<RefBuffer>
+    //Move constructible only
+    constexpr RefMultiBuffer(const RefMultiBuffer&) noexcept = delete;
+    constexpr RefMultiBuffer(RefMultiBuffer&&) noexcept = default;
+
+    //Constructor for anything that can normally make an std::vector<RefBuffer>
     template<typename... Args>
         requires NoThrowConstructible<decltype(buffers), Args...>
-    RefMultiBuffer(Args&&...args) noexcept : buffers{std::forward<decltype(args)>(args)...} {
+    constexpr RefMultiBuffer(Args&&...args) noexcept :
+            buffers{std::forward<decltype(args)>(args)...} {
+    }
+
+    //Move assignable only
+    constexpr RefMultiBuffer& operator=(const RefMultiBuffer&) noexcept = delete;
+    constexpr RefMultiBuffer& operator=(RefMultiBuffer&&) noexcept = default;
+
+    [[nodiscard]] constexpr auto data() noexcept -> RefBuffer * {
+        return this->buffers.data();
+    }
+    [[nodiscard]] constexpr auto data() const noexcept -> const RefBuffer * {
+        return this->buffers.data();
+    }
+
+    [[nodiscard]] constexpr auto size() const noexcept -> size_t {
+        return this->buffers.size();
+    }
+
+    [[nodiscard]] constexpr auto begin() noexcept -> RefBuffer * {
+        return this->buffers.data();
+    }
+    [[nodiscard]] constexpr auto begin() const noexcept -> const RefBuffer * {
+        return this->buffers.data();
+    }
+    [[nodiscard]] constexpr auto cbegin() const noexcept -> const RefBuffer * {
+        return this->buffers.data();
+    }
+    [[nodiscard]] constexpr auto end() noexcept -> RefBuffer * {
+        return this->buffers.data() + this->buffers.size();
+    }
+    [[nodiscard]] constexpr auto end() const noexcept -> const RefBuffer * {
+        return this->buffers.data() + this->buffers.size();
+    }
+    [[nodiscard]] constexpr auto cend() const noexcept -> const RefBuffer * {
+        return this->buffers.data() + this->buffers.size();
     }
 
     /*
@@ -152,8 +195,12 @@ public:
     }
     */
 
-    constexpr RefBuffer& operator[](size_t idx) const noexcept {
-        assert(idx <= size);
+    constexpr RefBuffer& operator[](const size_t idx) noexcept {
+        assert(idx <= buffers.size());
+        return buffers[idx];
+    }
+    constexpr const RefBuffer& operator[](const size_t idx) const noexcept {
+        assert(idx <= buffers.size());
         return buffers[idx];
     }
 
@@ -166,11 +213,8 @@ public:
     //}
 };
 
-static_assert(std::is_trivially_copyable_v<RefMultiBuffer<IOV_MAX>>);
-static_assert(std::is_nothrow_copy_constructible_v<RefMultiBuffer<IOV_MAX>>);
-static_assert(std::is_nothrow_move_constructible_v<RefMultiBuffer<IOV_MAX>>);
-static_assert(std::is_nothrow_copy_assignable_v<RefMultiBuffer<IOV_MAX>>);
-static_assert(std::is_nothrow_move_assignable_v<RefMultiBuffer<IOV_MAX>>);
+static_assert(std::is_nothrow_move_constructible_v<RefMultiBuffer>);
+static_assert(std::is_nothrow_move_assignable_v<RefMultiBuffer>);
 
 //TODO: This may be useful as an optimization, std::span equivalent with std::byte* didn't work
 static_assert(std::is_layout_compatible_v<::iovec, std::pair<void *, size_t>>);
@@ -194,10 +238,10 @@ public:
 
 } // namespace n3
 
-//Specialization in std to mark RefBuffer as a borrowed range since it's basically just a span
+//Specialization to mark RefBuffer as a borrowed range since it's basically just a span
 template<>
 inline constexpr bool std::ranges::enable_borrowed_range<n3::RefBuffer> = true;
 
-//Make sure the refbuffer is a trivial range type, asserts need to be after the namespace std specialization
+//Make sure the refbuffer is a trivial range type, asserts need to be after the std specialization
 static_assert(std::ranges::borrowed_range<n3::RefBuffer>);
 static_assert(std::ranges::contiguous_range<n3::RefBuffer>);

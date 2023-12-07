@@ -32,6 +32,7 @@ OwningBuffer::OwningBuffer(std::span<std::byte> init_data) :
 OwningBuffer::OwningBuffer(std::vector<std::byte>&& init_data) : data{init_data} {
 }
 
+//TODO: Use mmap to guarantee a page instead of doing so indirectly via operator new allocation
 PageBuffer::PageBuffer() :
         page_size{PageSize::get()},
         underlying{[] {

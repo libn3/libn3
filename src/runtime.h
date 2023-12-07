@@ -26,10 +26,10 @@ public:
             mf{std::bind_front(std::forward<F>(func), std::forward<fArgs...>(func_args...))} {
     }
 
-    callback(const callback&) = delete;
+    callback(const callback&) noexcept = delete;
     callback(callback&&) noexcept = default;
 
-    callback& operator=(const callback&) = delete;
+    callback& operator=(const callback&) noexcept = delete;
     callback& operator=(callback&&) noexcept = default;
 
     /*
