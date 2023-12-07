@@ -43,15 +43,13 @@ public:
     //Constructor for anything that can normally make an std::span<std::byte>
     template<typename... Args>
         requires NoThrowConstructible<decltype(underlying), Args...>
-    constexpr RefBuffer(Args&&...args) noexcept :
-            underlying{std::forward<decltype(args)>(args)...} {
+    constexpr RefBuffer(Args&&...args) noexcept : underlying{std::forward<Args...>(args)...} {
     }
 
     //Constructor for other types of spans that can be converted to a span of bytes
     template<typename T>
         requires std::is_trivially_copyable_v<T>
-    constexpr RefBuffer(std::span<T>&& sp) noexcept :
-            underlying{std::forward<decltype(sp)>(std::as_writable_bytes(sp))} {
+    constexpr RefBuffer(std::span<T> sp) noexcept : underlying{std::as_writable_bytes(sp)} {
     }
 
     //Constructor for arbitrary type pointers which can always be aliased by std::byte

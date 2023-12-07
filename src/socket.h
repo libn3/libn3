@@ -45,11 +45,13 @@ namespace n3::net::linux {
  * I want any inheritance to be CRTP interfaces with zero state, or pursue something else entirely
  */
 
+//TODO: THIS DOESN'T HAVE TO BE A CRTP CLASS IT CAN JUST USE TEMPLATES AND SPECIALIZATION!!!
+
 template<typename T>
 class socket {
 public:
     //Keep this type an interface instead of a full virtual base class
-    virtual ~socket() = 0;
+    //virtual ~socket() = 0;
 
     std::expected<void, error::ErrorCode> listen(const int sock) const noexcept {
         //Values above SOMAXCONN are truncated
@@ -61,6 +63,54 @@ public:
         }
         return n3::linux::listen(sock, backlog);
     }
+
+    //const T& sock;
+    //const int fd = sock.native_handle();
+    //send();
+    //TODO: Figure out how the whole "save callback to write queue" thing works, is that an optional return value?
+    /*
+     * TODO: Is there a way to "sink" the callback addition work to never require a return value?
+     * I'm imaginging it would require something on the general IO context loop executor thing
+     * Idea being, you register/add a new callback to the read/write queue of a native handle,
+     * which is all stored in a single massive hashmap/tree for actual usage
+     *
+     * The buffer coalescing I want can be handled in making a read/write buffer queue wrapper type
+     *
+     * Was also thinking just not doing the syscall work in the actual function here,
+     * only registering what you need, and returning
+     * Idea there being that you can bulk dispatch and/or simplify things by lazily actioning the command
+     *
+     * For epoll, likely limited value unless there's some syscall magic I can't think of right now
+     *
+     * For io_uring however, this can be a really big win because you'd have more data/context to be
+     * able to do things like chaining syscalls on the same fd, doing bulk insertions to the
+     * submission queue or other similar tricks
+     *
+     * Not to mention the fact that you'd benefit from shared memory handling a bit
+     * If everything lives in a single important lookup map, then that part of memory is always in cache
+     * Whereas if every socket wrapper has its own queues, now you're running in a totally unique allocation
+     * It basically consolidates the memory allocation and usage in a cache friendlier way
+     *
+     * You already have to pay _some_ kinda price even for eager execution because of the fact
+     * that read/write queues per socket exist, so you need to flush old data before new to
+     * not reorder things from the user's application
+     * So if you're already having to push something to a queue for the socket prior to actually
+     * doing things, what's one more queue push?
+     *
+     * Practically speaking, this would mean 2 kinda designs given the proactor/reactor differences
+     * between epoll and io_uring
+     *
+     * For epoll, owning callback of the syscall and args pushed into a read/write interest queue,
+     * and then flushed prior to going back to waiting on epoll
+     * For io_uring and IOCP, trigger the syscall immediately and register the callback in the lookup
+     * table for when the completion event is received
+     *
+     * Probably means that for the different executors, the difference will mainly be about how the
+     * lookup and queues are stored/handled
+     * Namely:
+     *  - Epoll has a lookup of fds pointing to a pair of read/write queues
+     *  - io_uring/IOCP has a lookup of completion events pointing to callbacks
+     */
 
     //TODO: Probably needs a callback invocable concept that replicates the bind_front arg stacking
     //TODO: Verify that you can construct a callback object with the template types/args
@@ -115,7 +165,7 @@ public:
              * I WANT TO BE CLEVER ABOUT IT!!!
              */
             [[maybe_unused]] n3::runtime::callback<std::expected<size_t, error::ErrorCode>> cb{
-                    std::forward<F&&>(cb_func), std::forward<Args&&...>(cb_args...)};
+                    std::forward<F>(cb_func), std::forward<Args...>(cb_args...)};
             return;
         }
         //Error value with no special meaning, call the callback immediately

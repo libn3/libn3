@@ -23,7 +23,7 @@ public:
     //TODO: Verify requirements on std::move_only_function to prevent UB (like ensure Func type is constructible)
     template<typename F, typename... fArgs>
     callback(F&& func, fArgs&&...func_args) :
-            mf{std::bind_front(std::forward<F&&>(func), std::forward<fArgs&&...>(func_args...))} {
+            mf{std::bind_front(std::forward<F>(func), std::forward<fArgs...>(func_args...))} {
     }
 
     callback(const callback&) = delete;
@@ -39,8 +39,8 @@ public:
      * a compile time error if the user doesn't std::move() the object when calling the callback
      */
     void operator()(cArgs&&...call_args) && noexcept(
-            noexcept(this->mf(std::forward<cArgs&&...>(call_args...)))) {
-        std::move(this->mf)(std::forward<cArgs&&...>(call_args...));
+            noexcept(this->mf(std::forward<cArgs...>(call_args...)))) {
+        std::move(this->mf)(std::forward<cArgs...>(call_args...));
         //TODO: Would like to do something like empty out the function after usage by setting nullptr
         //Problem is, calling operator() on an empty std::move_only_function is UB, so I'd have to throw something myself
     }
@@ -66,7 +66,6 @@ public:
  * Is this "easy" with EPOLLONESHOT, or does that add too much overhead in syscalls?
  * Having a "strand" type mechanism sounds useful, but how would that play with these queues/events?
  */
-
 
 //template<typename T>
 //class event {
