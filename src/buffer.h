@@ -227,6 +227,13 @@ public:
         return this->buffers.emplace_back(std::forward<decltype(args)>(args)...);
     }
 
+    constexpr void extend(const RefMultiBuffer& multi) {
+        std::ranges::copy(multi.buffers, std::back_inserter(this->buffers));
+    }
+    constexpr void extend(RefMultiBuffer&& multi) {
+        std::ranges::move(multi.buffers, std::back_inserter(this->buffers));
+    }
+
     constexpr void consume(const size_t bytes) {
         assert(bytes <= this->size_bytes());
 
