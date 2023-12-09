@@ -1,7 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <concepts>
+#include <deque>
+#include <functional>
 #include <memory>
 #include <ranges>
 #include <span>
@@ -9,6 +12,12 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+//Forward declaration
+namespace n3::runtime {
+template<typename...>
+class callback;
+}
 
 namespace n3 {
 
@@ -121,6 +130,11 @@ static_assert(std::is_nothrow_move_assignable_v<RefBuffer>);
 class RefMultiBuffer {
     std::vector<RefBuffer> buffers;
 
+    [[nodiscard]] constexpr auto size_bytes() const noexcept -> size_t {
+        return std::ranges::fold_left(
+                this->buffers | std::views::transform(&RefBuffer::size), 0, std::plus<size_t>());
+    }
+
 public:
     //Default constructor
     constexpr RefMultiBuffer() = default;
@@ -212,6 +226,20 @@ public:
     constexpr auto emplace_back(auto&&...args) {
         return this->buffers.emplace_back(std::forward<decltype(args)>(args)...);
     }
+
+    constexpr void consume(const size_t bytes) {
+        assert(bytes <= this->size_bytes());
+        size_t sum = 0;
+        for (auto& buffer : this->buffers) {
+            const auto remaining = (bytes - sum);
+            if (buffer.size() > remaining) {
+                //Partial consumption of a buffer
+                buffer = buffer.as_span() | std::views::drop(remaining);
+                return;
+            }
+            sum += buffer.size();
+        }
+    }
 };
 
 static_assert(std::is_nothrow_default_constructible_v<RefMultiBuffer>);
@@ -235,6 +263,43 @@ public:
 
     const std::span<std::byte> data() const noexcept {
         return std::span{this->underlying.get(), this->page_size};
+    }
+};
+
+template<typename... CBA>
+class BufferQueue {
+    RefMultiBuffer buffers;
+    std::deque<n3::runtime::callback<CBA...>> callbacks;
+    size_t buffer_size;
+    size_t buffer_bytes_size;
+
+public:
+    //Default constructor
+    constexpr BufferQueue() = default;
+
+    //Move constructible only
+    constexpr BufferQueue(const BufferQueue&) = delete;
+    constexpr BufferQueue(BufferQueue&&) = default;
+
+    //Move assignable only
+    constexpr BufferQueue& operator=(const BufferQueue&) = delete;
+    constexpr BufferQueue& operator=(BufferQueue&&) = default;
+
+    [[nodiscard]] constexpr auto empty() const noexcept -> size_t {
+        return this->buffer_size == 0;
+    }
+    [[nodiscard]] constexpr auto size() const noexcept -> size_t {
+        return this->buffer_size;
+    }
+
+    constexpr void push(const RefBuffer buf, const n3::runtime::callback<CBA...> callback) {
+        this->buffers.push_back(buf);
+        this->callbacks.push_back(callback);
+        this->buffer_size++;
+        this->buffer_bytes_size += buf.size();
+    }
+    constexpr void pop(const size_t bytes) {
+        assert(bytes <= buffer_bytes_size);
     }
 };
 
