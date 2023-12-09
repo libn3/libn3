@@ -16,10 +16,8 @@ class PageSize {
 
 public:
     static size_t get() {
-        std::call_once(page_size_init_flag, [&] {
-            const auto ret = n3::linux::sysconf(_SC_PAGESIZE);
-            PAGE_SIZE = ret.value_or(4096);
-        });
+        std::call_once(page_size_init_flag,
+                [&] { PAGE_SIZE = n3::linux::sysconf(_SC_PAGESIZE).value_or(4096); });
         return PAGE_SIZE;
     }
 };
