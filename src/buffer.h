@@ -209,6 +209,18 @@ public:
     //            .iov_len = this->buffers.size_bytes(),
     //    };
     //}
+
+    constexpr void push_back(const RefBuffer& buf) {
+        this->buffers.push_back(buf);
+    }
+    constexpr void push_back(RefBuffer&& buf) {
+        this->buffers.push_back(std::move(buf));
+    }
+
+    template<typename... Args>
+    constexpr auto emplace_back(Args&&...args) {
+        return this->buffers.emplace_back(std::forward<Args...>(args...));
+    }
 };
 
 static_assert(std::is_nothrow_default_constructible_v<RefMultiBuffer>);
