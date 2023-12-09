@@ -55,9 +55,9 @@ public:
 
     //Constructor for anything that can be used to create the underlying variant
     template<typename... Args>
-        requires NoThrowConstructible<decltype(underlying), Args...>
-    constexpr ErrorCode(Args&&...args) noexcept :
-            underlying{std::forward<decltype(args)>(args)...} {
+    constexpr ErrorCode(Args&&...args) noexcept(
+            std::is_nothrow_constructible_v<decltype(underlying), Args...>) :
+            underlying{std::forward<Args...>(args)...} {
     }
 
     //Explicit error type constructor for posix errors using a trivial sentinel type
@@ -71,13 +71,13 @@ public:
             ErrorCode{gai_error{err_arg}} {
     }
 
-    constexpr ErrorCode(const ErrorCode&) noexcept = default;
-    constexpr ErrorCode(ErrorCode&&) noexcept = default;
+    constexpr ErrorCode(const ErrorCode&) = default;
+    constexpr ErrorCode(ErrorCode&&) = default;
 
     constexpr ErrorCode& operator=(const ErrorCode&) = default;
-    constexpr ErrorCode& operator=(ErrorCode&&) noexcept = default;
+    constexpr ErrorCode& operator=(ErrorCode&&) = default;
 
-    constexpr auto operator<=>(const ErrorCode&) const noexcept = default;
+    constexpr auto operator<=>(const ErrorCode&) const = default;
 
     template<std::integral T>
     constexpr auto operator<=>(const T& arg) const noexcept {

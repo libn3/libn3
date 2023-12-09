@@ -21,10 +21,6 @@ namespace n3 {
  * We use both camel_case and PascalCase for our names, what is the convention I'm using?
  */
 
-template<typename T, typename... Args>
-concept NoThrowConstructible
-        = std::constructible_from<T, Args...> && std::is_nothrow_constructible_v<T, Args...>;
-
 class OwningBuffer {
     std::vector<std::byte> data;
 
@@ -45,12 +41,13 @@ class RefBuffer : public std::ranges::view_interface<RefBuffer> {
     std::span<std::byte> underlying;
 
 public:
-    constexpr RefBuffer() noexcept = default;
+    constexpr RefBuffer() = default;
 
     //Constructor for anything that can normally make an std::span<std::byte>
     template<typename... Args>
-        requires NoThrowConstructible<decltype(underlying), Args...>
-    constexpr RefBuffer(Args&&...args) noexcept : underlying{std::forward<Args...>(args)...} {
+    constexpr RefBuffer(Args&&...args) noexcept(
+            std::is_nothrow_constructible_v<decltype(underlying), Args...>) :
+            underlying{std::forward<Args...>(args)...} {
     }
 
     //Constructor for other types of spans that can be converted to a span of bytes
@@ -62,7 +59,8 @@ public:
     //Constructor for arbitrary type pointers which can always be aliased by std::byte
     template<typename T>
         requires std::is_trivially_copyable_v<T>
-    constexpr RefBuffer(T *const buf, const size_t len) noexcept :
+    constexpr RefBuffer(T *const buf, const size_t len) noexcept(
+            std::is_nothrow_constructible_v<decltype(underlying), T *, size_t>) :
             underlying{reinterpret_cast<std::byte *>(buf), len} {
     }
 
@@ -121,27 +119,27 @@ static_assert(std::is_nothrow_move_constructible_v<RefBuffer>);
 static_assert(std::is_nothrow_copy_assignable_v<RefBuffer>);
 static_assert(std::is_nothrow_move_assignable_v<RefBuffer>);
 
-class RefMultiBuffer : public std::ranges::view_interface<RefMultiBuffer> {
+class RefMultiBuffer {
     std::vector<RefBuffer> buffers;
 
 public:
     //Default constructor
-    constexpr RefMultiBuffer() noexcept = default;
+    constexpr RefMultiBuffer() = default;
 
     //Move constructible only
-    constexpr RefMultiBuffer(const RefMultiBuffer&) noexcept = delete;
-    constexpr RefMultiBuffer(RefMultiBuffer&&) noexcept = default;
+    constexpr RefMultiBuffer(const RefMultiBuffer&) = delete;
+    constexpr RefMultiBuffer(RefMultiBuffer&&) = default;
 
     //Constructor for anything that can normally make an std::vector<RefBuffer>
     template<typename... Args>
-        requires NoThrowConstructible<decltype(buffers), Args...>
-    constexpr RefMultiBuffer(Args&&...args) noexcept :
-            buffers{std::forward<decltype(args)>(args)...} {
+    constexpr RefMultiBuffer(Args&&...args) noexcept(
+            std::is_nothrow_constructible_v<decltype(this->buffers), Args...>) :
+            buffers{std::forward<Args...>(args)...} {
     }
 
     //Move assignable only
-    constexpr RefMultiBuffer& operator=(const RefMultiBuffer&) noexcept = delete;
-    constexpr RefMultiBuffer& operator=(RefMultiBuffer&&) noexcept = default;
+    constexpr RefMultiBuffer& operator=(const RefMultiBuffer&) = delete;
+    constexpr RefMultiBuffer& operator=(RefMultiBuffer&&) = default;
 
     [[nodiscard]] constexpr auto data() noexcept -> RefBuffer * {
         return this->buffers.data();
@@ -190,7 +188,7 @@ public:
      */
     /*
     template<typename... Args>
-        requires NoThrowConstructible<decltype(buffers), Args...>
+        requires std::is_nothrow_constructible_v<decltype(buffers), Args...>
     RefMultiBuffer(Args&&...args) noexcept : buffers{std::forward<decltype(args)>(args)...} {
     }
     */
@@ -213,6 +211,7 @@ public:
     //}
 };
 
+static_assert(std::is_nothrow_default_constructible_v<RefMultiBuffer>);
 static_assert(std::is_nothrow_move_constructible_v<RefMultiBuffer>);
 static_assert(std::is_nothrow_move_assignable_v<RefMultiBuffer>);
 
