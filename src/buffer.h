@@ -238,6 +238,7 @@ public:
                 return;
             }
             sum += buffer.size();
+            //TODO: Need to remove the buffer from head of the vector, which complicates the iteration
         }
     }
 };
