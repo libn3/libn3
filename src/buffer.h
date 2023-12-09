@@ -229,16 +229,24 @@ public:
 
     constexpr void consume(const size_t bytes) {
         assert(bytes <= this->size_bytes());
-        size_t sum = 0;
-        for (auto& buffer : this->buffers) {
-            const auto remaining = (bytes - sum);
-            if (buffer.size() > remaining) {
-                //Partial consumption of a buffer
-                buffer = buffer.as_span() | std::views::drop(remaining);
-                return;
-            }
-            sum += buffer.size();
-            //TODO: Need to remove the buffer from head of the vector, which complicates the iteration
+
+        //Remove buffers from the head while the total size is smaller than the requested amount
+        auto sum = 0;
+        std::erase_if(this->buffers, [&](const auto& buf) mutable {
+            const bool ret = (bytes - sum);
+            sum += buf.size();
+            return ret;
+        });
+
+        if (this->buffers.empty()) {
+            return;
+        }
+
+        const auto remaining = (bytes - sum);
+        auto& head_buffer = this->buffers.front();
+        if (head_buffer.size() > remaining) {
+            //Partial consumption of a buffer
+            head_buffer = head_buffer.as_span() | std::views::drop(remaining);
         }
     }
 };
