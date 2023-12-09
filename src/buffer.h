@@ -88,7 +88,7 @@ public:
         return underlying;
     }
 
-    constexpr std::byte& operator[](size_t idx) const noexcept {
+    [[nodiscard]] constexpr std::byte& operator[](size_t idx) const noexcept {
         assert(idx <= underlying.size_bytes());
         return underlying[idx];
     }
@@ -193,11 +193,11 @@ public:
     }
     */
 
-    constexpr RefBuffer& operator[](const size_t idx) noexcept {
+    [[nodiscard]] constexpr RefBuffer& operator[](const size_t idx) noexcept {
         assert(idx <= buffers.size());
         return buffers[idx];
     }
-    constexpr const RefBuffer& operator[](const size_t idx) const noexcept {
+    [[nodiscard]] constexpr const RefBuffer& operator[](const size_t idx) const noexcept {
         assert(idx <= buffers.size());
         return buffers[idx];
     }
