@@ -54,10 +54,9 @@ public:
     constexpr ErrorCode() noexcept = default;
 
     //Constructor for anything that can be used to create the underlying variant
-    template<typename... Args>
-    constexpr ErrorCode(Args&&...args) noexcept(
-            std::is_nothrow_constructible_v<decltype(underlying), Args...>) :
-            underlying{std::forward<Args...>(args)...} {
+    constexpr ErrorCode(auto&&...args) noexcept(
+            std::is_nothrow_constructible_v<decltype(underlying), decltype(args)...>) :
+            underlying{std::forward<decltype(args)>(args)...} {
     }
 
     //Explicit error type constructor for posix errors using a trivial sentinel type

@@ -44,10 +44,9 @@ public:
     constexpr RefBuffer() = default;
 
     //Constructor for anything that can normally make an std::span<std::byte>
-    template<typename... Args>
-    constexpr RefBuffer(Args&&...args) noexcept(
-            std::is_nothrow_constructible_v<decltype(underlying), Args...>) :
-            underlying{std::forward<Args...>(args)...} {
+    constexpr RefBuffer(auto&&...args) noexcept(
+            std::is_nothrow_constructible_v<decltype(underlying), decltype(args)...>) :
+            underlying{std::forward<decltype(args)>(args)...} {
     }
 
     //Constructor for other types of spans that can be converted to a span of bytes
@@ -131,10 +130,9 @@ public:
     constexpr RefMultiBuffer(RefMultiBuffer&&) = default;
 
     //Constructor for anything that can normally make an std::vector<RefBuffer>
-    template<typename... Args>
-    constexpr RefMultiBuffer(Args&&...args) noexcept(
-            std::is_nothrow_constructible_v<decltype(this->buffers), Args...>) :
-            buffers{std::forward<Args...>(args)...} {
+    constexpr RefMultiBuffer(auto&&...args) noexcept(
+            std::is_nothrow_constructible_v<decltype(this->buffers), decltype(args)...>) :
+            buffers{std::forward<decltype(args)>(args)...} {
     }
 
     //Move assignable only
@@ -186,12 +184,6 @@ public:
      *
      * s.send(x, y, body); //This would call writev et al under the hood
      */
-    /*
-    template<typename... Args>
-        requires std::is_nothrow_constructible_v<decltype(buffers), Args...>
-    RefMultiBuffer(Args&&...args) noexcept : buffers{std::forward<decltype(args)>(args)...} {
-    }
-    */
 
     [[nodiscard]] constexpr RefBuffer& operator[](const size_t idx) noexcept {
         assert(idx <= buffers.size());
@@ -217,9 +209,8 @@ public:
         this->buffers.push_back(std::move(buf));
     }
 
-    template<typename... Args>
-    constexpr auto emplace_back(Args&&...args) {
-        return this->buffers.emplace_back(std::forward<Args...>(args...));
+    constexpr auto emplace_back(auto&&...args) {
+        return this->buffers.emplace_back(std::forward<decltype(args)>(args)...);
     }
 };
 
