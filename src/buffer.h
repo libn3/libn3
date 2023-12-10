@@ -238,24 +238,30 @@ public:
         assert(bytes <= this->size_bytes());
 
         //Remove buffers from the head while the total size is smaller than the requested amount
-        auto sum = 0;
+        size_t sum = 0;
         std::erase_if(this->buffers, [&](const auto& buf) {
             const auto remaining = (bytes - sum);
             const bool should_erase = (buf.size() <= remaining);
             sum += buf.size();
             return should_erase;
         });
+        assert(sum <= bytes);
 
+        //Should only happen when bytes is equal to the total number of bytes stored in the buffers
         if (this->buffers.empty()) {
+            assert(sum == bytes);
             return;
         }
 
         const auto remaining = (bytes - sum);
+        assert(remaining > 0);
+
         auto& head_buffer = this->buffers.front();
-        if (head_buffer.size() > remaining) {
-            //Partial consumption of a buffer
-            head_buffer = head_buffer.as_span() | std::views::drop(remaining);
-        }
+        //Initial buffer size <= remaining should have been handled by the std::erase_if condition
+        assert(head_buffer.size() > remaining);
+
+        //Partial consumption of the remaining head buffer
+        head_buffer = head_buffer.as_span() | std::views::drop(remaining);
     }
 };
 
