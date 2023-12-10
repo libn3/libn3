@@ -239,10 +239,11 @@ public:
 
         //Remove buffers from the head while the total size is smaller than the requested amount
         auto sum = 0;
-        std::erase_if(this->buffers, [&](const auto& buf) mutable {
-            const bool ret = (bytes - sum);
+        std::erase_if(this->buffers, [&](const auto& buf) {
+            const auto remaining = (bytes - sum);
+            const bool should_erase = (buf.size() <= remaining);
             sum += buf.size();
-            return ret;
+            return should_erase;
         });
 
         if (this->buffers.empty()) {
