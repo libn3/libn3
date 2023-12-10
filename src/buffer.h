@@ -130,11 +130,6 @@ static_assert(std::is_nothrow_move_assignable_v<RefBuffer>);
 class RefMultiBuffer {
     std::vector<RefBuffer> buffers;
 
-    [[nodiscard]] constexpr auto size_bytes() const noexcept -> size_t {
-        return std::ranges::fold_left(
-                this->buffers | std::views::transform(&RefBuffer::size), 0, std::plus<size_t>());
-    }
-
 public:
     //Default constructor
     constexpr RefMultiBuffer() = default;
@@ -162,6 +157,10 @@ public:
 
     [[nodiscard]] constexpr auto size() const noexcept -> size_t {
         return this->buffers.size();
+    }
+    [[nodiscard]] constexpr auto size_bytes() const noexcept -> size_t {
+        return std::ranges::fold_left(
+                this->buffers | std::views::transform(&RefBuffer::size), 0, std::plus<size_t>());
     }
 
     [[nodiscard]] constexpr auto begin() noexcept -> RefBuffer * {
@@ -316,13 +315,29 @@ public:
     }
 
     constexpr void push(const RefBuffer buf, const n3::runtime::callback<CBA...> callback) {
-        this->buffers.push_back(buf);
-        this->callbacks.push_back(callback);
+        const auto arg_buf_size_bytes = buf.size();
+
+        //TODO: Figure out how to associate byte counts with callbacks for the pop function
+
         this->buffer_size++;
-        this->buffer_bytes_size += buf.size();
+        this->buffer_bytes_size += arg_buf_size_bytes;
+        this->buffers.push_back(std::move(buf));
+        this->callbacks.push_back(std::move(callback));
+    }
+    constexpr void push(const RefMultiBuffer multi, const n3::runtime::callback<CBA...> callback) {
+        const auto arg_buf_size = multi.size();
+        const auto arg_buf_size_bytes = multi.size_bytes();
+
+        //TODO: Figure out how to associate byte counts with callbacks for the pop function
+
+        this->buffer_size += arg_buf_size;
+        this->buffer_bytes_size += arg_buf_size_bytes;
+        this->buffers.extend(std::move(multi));
+        this->callbacks.push_back(std::move(callback));
     }
     constexpr void pop(const size_t bytes) {
         assert(bytes <= buffer_bytes_size);
+        this->buffers.consume(bytes);
     }
 };
 
