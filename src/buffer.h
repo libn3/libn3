@@ -90,6 +90,8 @@ public:
     constexpr RefBuffer(auto&&...args) noexcept(
             std::is_nothrow_constructible_v<decltype(underlying), decltype(args)...>) :
             underlying{std::forward<decltype(args)>(args)...} {
+        //Assert that all the types in the parameter pack aren't the null pointer
+        static_assert((std::is_null_pointer_v<decltype(args)> && ...));
     }
 
     //Constructor for other types of spans that can be converted to a span of bytes
@@ -101,7 +103,7 @@ public:
 
     //Constructor for arbitrary type pointers which can always be cast to void* in an iovec
     template<typename T>
-        requires std::is_trivially_copyable_v<T>
+        requires(std::is_trivially_copyable_v<T> + !std::is_null_pointer_v<T>)
     constexpr RefBuffer(T *const buf) noexcept : underlying{static_cast<void *>(buf), sizeof(T)} {
     }
 
@@ -287,9 +289,6 @@ public:
 static_assert(std::is_nothrow_default_constructible_v<RefMultiBuffer>);
 static_assert(std::is_nothrow_move_constructible_v<RefMultiBuffer>);
 static_assert(std::is_nothrow_move_assignable_v<RefMultiBuffer>);
-
-//TODO: This may be useful as an optimization, std::span equivalent with std::byte* didn't work
-static_assert(std::is_layout_compatible_v<::iovec, std::pair<void *, size_t>>);
 
 /*
  * A simple memory page buffer that checks the page size at runtime
