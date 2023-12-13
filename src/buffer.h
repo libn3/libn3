@@ -229,13 +229,12 @@ public:
         return buffers[idx];
     }
 
-    //TODO: How to do this properly?
-    //[[nodiscard]] constexpr auto as_iovec() noexcept -> ::iovec {
-    //    return {
-    //            .iov_base = this->buffers.buffers(),
-    //            .iov_len = this->buffers.size_bytes(),
-    //    };
-    //}
+    [[nodiscard]] constexpr operator ::iovec *() noexcept {
+        return reinterpret_cast<::iovec *>(this->buffers.data());
+    }
+    [[nodiscard]] constexpr operator const ::iovec *() const noexcept {
+        return reinterpret_cast<const ::iovec *>(this->buffers.data());
+    }
 
     constexpr void push_back(const RefBuffer& buf) {
         this->buffers.push_back(buf);
