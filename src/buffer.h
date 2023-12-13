@@ -262,7 +262,7 @@ public:
         std::erase_if(this->buffers, [&](const auto& buf) {
             const auto remaining = (bytes - sum);
             const bool should_erase = (buf.size() <= remaining);
-            sum += buf.size();
+            sum += (should_erase) ? buf.size() : remaining;
             return should_erase;
         });
         assert(sum <= bytes);
@@ -309,7 +309,7 @@ public:
 template<typename... CBA>
 class BufferQueue {
     RefMultiBuffer buffers;
-    std::deque<n3::runtime::callback<CBA...>> callbacks;
+    std::deque<std::pair<n3::runtime::callback<CBA...>, size_t>> callbacks;
     size_t buffer_size;
     size_t buffer_bytes_size;
 
@@ -335,27 +335,50 @@ public:
     constexpr void push(const RefBuffer buf, const n3::runtime::callback<CBA...> callback) {
         const auto arg_buf_size_bytes = buf.size();
 
-        //TODO: Figure out how to associate byte counts with callbacks for the pop function
-
         this->buffer_size++;
         this->buffer_bytes_size += arg_buf_size_bytes;
         this->buffers.push_back(std::move(buf));
-        this->callbacks.push_back(std::move(callback));
+        this->callbacks.emplace_back(std::move(callback), arg_buf_size_bytes);
     }
     constexpr void push(const RefMultiBuffer multi, const n3::runtime::callback<CBA...> callback) {
         const auto arg_buf_size = multi.size();
         const auto arg_buf_size_bytes = multi.size_bytes();
 
-        //TODO: Figure out how to associate byte counts with callbacks for the pop function
-
         this->buffer_size += arg_buf_size;
         this->buffer_bytes_size += arg_buf_size_bytes;
         this->buffers.extend(std::move(multi));
-        this->callbacks.push_back(std::move(callback));
+        this->callbacks.emplace_back(std::move(callback), arg_buf_size_bytes);
     }
     constexpr void pop(const size_t bytes) {
+        if (this->empty()) {
+            return;
+        }
+
         assert(bytes <= buffer_bytes_size);
+
         this->buffers.consume(bytes);
+        this->buffer_size = this->buffers.size();
+
+        //TODO: This should short-circuit on first non-erase callback and std::erase_if is linear
+        //TODO: Probably requires some kinda ranges algorithm piping
+        size_t sum = 0;
+        std::erase_if(this->callbacks, [&](auto& callback, auto& callback_size) {
+            const auto remaining = (bytes - sum);
+            const bool should_erase = (callback_size <= remaining);
+
+            const size_t callback_size_change = (should_erase) ? callback_size : remaining;
+
+            sum += callback_size;
+            this->buffer_bytes_size -= callback_size;
+
+            if (should_erase) {
+                //Call the callback
+                std::invoke(callback);
+            } else if (callback_size > remaining) {
+                callback_size -= remaining;
+            }
+            return should_erase;
+        });
     }
 };
 
