@@ -41,18 +41,52 @@ public:
 
 class RefBuffer : public std::ranges::view_interface<RefBuffer> {
     /*
-     * TODO: Use an iovec/std::pair<std::byte *, size_t> instead of a span
-     * This makes it usable directly for iovec syscalls, and makes the multibuffer make more sense
-     * Otherwise, the multibuffer needs to do some conversions to be used or uses the iovec/pair
-     * version internally.
-     * And now you have a RefMultiBuffer not using vector of RefBuffers, which feels so wrong!
+     * Using an iovec as the underlying instead of a span of bytes because they aren't layout
+     * compatible types, and otherwise I would need to do conversion to use them in a
+     * scatter-gather context like RefMultiBuffer
+     *
+     * Much of the implementation code relies on the fact std::byte is a special aliasing type,
+     * much like char/unsigned char, so we can get away with static casts for everything
      */
-    std::span<std::byte> underlying;
+    ::iovec underlying;
+
+    /*
+     * This function needs to exist to play nicely with the static asserts it contains
+     * Specifically, std::is_pointer_interconvertible_with_class for the underlying iovec
+     * Declare it inside the top level of the class, class type is incomplete
+     * Declare it outside the class, member is private
+     * The rest of the asserts were added here just to keep them all together
+     */
+    consteval void assert_guarantees() const noexcept {
+        //Compiler errors to make sure a RefBuffer is as trivial as it should be
+        static_assert(std::is_trivial_v<RefBuffer>);
+        static_assert(std::is_trivially_copyable_v<RefBuffer>);
+        static_assert(std::is_trivially_copy_constructible_v<RefBuffer>);
+        static_assert(std::is_trivially_move_constructible_v<RefBuffer>);
+        static_assert(std::is_trivially_copy_assignable_v<RefBuffer>);
+        static_assert(std::is_trivially_move_assignable_v<RefBuffer>);
+        static_assert(std::is_trivially_destructible_v<RefBuffer>);
+        static_assert(std::is_nothrow_copy_constructible_v<RefBuffer>);
+        static_assert(std::is_nothrow_move_constructible_v<RefBuffer>);
+        static_assert(std::is_nothrow_copy_assignable_v<RefBuffer>);
+        static_assert(std::is_nothrow_move_assignable_v<RefBuffer>);
+
+        //Some sanity asserts about the memory layout
+        static_assert(std::is_nothrow_convertible_v<RefBuffer, ::iovec>);
+        static_assert(std::is_standard_layout_v<RefBuffer>);
+        static_assert(std::is_standard_layout_v<::iovec>);
+        static_assert(sizeof(RefBuffer) == sizeof(::iovec));
+        static_assert(alignof(RefBuffer) == alignof(::iovec));
+
+        //Assert that we can reinterpret_cast<::iovec *>(RefBuffer *) without UB
+        static_assert(std::is_pointer_interconvertible_with_class(&RefBuffer::underlying));
+    }
 
 public:
-    constexpr RefBuffer() = default;
+    //Default constructor would mean nullptr which we don't want to allow
+    constexpr RefBuffer() = delete;
 
-    //Constructor for anything that can normally make an std::span<std::byte>
+    //Constructor for anything that can normally make an ::iovec
     constexpr RefBuffer(auto&&...args) noexcept(
             std::is_nothrow_constructible_v<decltype(underlying), decltype(args)...>) :
             underlying{std::forward<decltype(args)>(args)...} {
@@ -61,194 +95,57 @@ public:
     //Constructor for other types of spans that can be converted to a span of bytes
     template<typename T>
         requires std::is_trivially_copyable_v<T>
-    constexpr RefBuffer(std::span<T> sp) noexcept : underlying{std::as_writable_bytes(sp)} {
+    constexpr RefBuffer(std::span<T> sp) noexcept :
+            underlying{static_cast<void *>(sp.data()), sp.size_bytes()} {
     }
 
-    //Constructor for arbitrary type pointers which can always be aliased by std::byte
+    //Constructor for arbitrary type pointers which can always be cast to void* in an iovec
     template<typename T>
         requires std::is_trivially_copyable_v<T>
-    constexpr RefBuffer(T *const buf, const size_t len) noexcept(
-            std::is_nothrow_constructible_v<decltype(underlying), T *, size_t>) :
-            underlying{reinterpret_cast<std::byte *>(buf), len} {
-    }
-
-    //Constructor for iovecs which are basically just a span of bytes
-    constexpr RefBuffer(const ::iovec iov) noexcept :
-            underlying{static_cast<std::byte *>(iov.iov_base), iov.iov_len} {
+    constexpr RefBuffer(T *const buf) noexcept : underlying{static_cast<void *>(buf), sizeof(T)} {
     }
 
     [[nodiscard]] constexpr auto data() const noexcept -> std::byte * {
-        return this->underlying.data();
+        return reinterpret_cast<std::byte *>(this->underlying.iov_base);
     }
 
     [[nodiscard]] constexpr auto size() const noexcept -> size_t {
-        return this->underlying.size_bytes();
+        return this->underlying.iov_len;
     }
 
     [[nodiscard]] constexpr auto as_iovec() const noexcept -> ::iovec {
-        return {
-                .iov_base = this->underlying.data(),
-                .iov_len = this->underlying.size_bytes(),
-        };
-    }
-
-    [[nodiscard]] constexpr auto as_span() const noexcept -> std::span<std::byte> {
         return underlying;
     }
 
+    [[nodiscard]] constexpr auto as_span() const noexcept -> std::span<std::byte> {
+        return {reinterpret_cast<std::byte *>(this->underlying.iov_base), this->underlying.iov_len};
+    }
+
+    [[nodiscard]] constexpr operator ::iovec() const noexcept {
+        return this->underlying;
+    }
+    [[nodiscard]] constexpr operator std::span<std::byte>() const noexcept {
+        return this->as_span();
+    }
+
     [[nodiscard]] constexpr std::byte& operator[](size_t idx) const noexcept {
-        assert(idx <= underlying.size_bytes());
-        return underlying[idx];
+        assert(idx <= this->underlying.iov_len);
+        return reinterpret_cast<std::byte *>(this->underlying.iov_base)[idx];
     }
 
     [[nodiscard]] constexpr auto begin() const noexcept -> std::byte * {
-        return this->underlying.data();
+        return this->data();
     }
     [[nodiscard]] constexpr auto end() const noexcept -> std::byte * {
-        return this->underlying.data() + this->underlying.size_bytes();
+        return this->data() + this->size();
     }
     [[nodiscard]] constexpr auto cbegin() const noexcept -> const std::byte * {
-        return this->underlying.data();
+        return this->data();
     }
     [[nodiscard]] constexpr auto cend() const noexcept -> const std::byte * {
-        return this->underlying.data() + this->underlying.size_bytes();
+        return this->data() + this->size();
     }
 };
-
-//Compiler errors to make sure a RefBuffer is as trivial as it should be
-static_assert(std::is_trivially_copyable_v<RefBuffer>);
-static_assert(std::is_trivially_copy_constructible_v<RefBuffer>);
-static_assert(std::is_trivially_move_constructible_v<RefBuffer>);
-static_assert(std::is_trivially_copy_assignable_v<RefBuffer>);
-static_assert(std::is_trivially_move_assignable_v<RefBuffer>);
-static_assert(std::is_trivially_destructible_v<RefBuffer>);
-static_assert(std::is_nothrow_copy_constructible_v<RefBuffer>);
-static_assert(std::is_nothrow_move_constructible_v<RefBuffer>);
-static_assert(std::is_nothrow_copy_assignable_v<RefBuffer>);
-static_assert(std::is_nothrow_move_assignable_v<RefBuffer>);
-
-/*
- * TODO:
- * Experimental approach to try and redefine RefBuffer as a wrapper around an iovec struct
- * Running into C++ strict aliasing violations that are infuriating
- * They could _probably_ be handled by std::start_lifetime_as, but nobody implements that yet
- * and it's all compiler black magic that you can't adequately write yourself
- *
- * Not sure where to go from here, maybe I keep the refbuffer as is and make the multibuffer
- * store its underlying data as iovecs with RefBuffer conversions?
- * Don't like that given the fact that suddenly a RefMultiBuffer doesn't store multiple RefBuffers
- * which is incredibly counter intuitive
- *
- * Or maybe I make the RefBuffer a blanket std::byte array and use "pure" byte aliasing pointer
- * shenanigans and std::launder to try and replicate it?
- *
- * My main concern is having a nice wrapper type that I can trivially convert to an ::iovec * for
- * use in scatter-gather IO syscalls without needing to juggle my own raw pointers all the time
- * or by invoking undefined behaviour
- */
-//class RefBuffer : public std::ranges::view_interface<RefBuffer> {
-//    /*
-//     * Using an iovec as the underlying instead of a span of bytes because they aren't layout
-//     * compatible types, and otherwise I would need to do conversion to use them in a
-//     * scatter-gather context like RefMultiBuffer
-//     *
-//     * Much of the implementation code relies on the fact std::byte is a special aliasing type,
-//     * much like char/unsigned char, so we can get away with static casts for everything
-//     */
-//    ::iovec underlying;
-//
-//public:
-//    constexpr RefBuffer() = default;
-//
-//    //Constructor for anything that can normally make an ::iovec
-//    constexpr RefBuffer(auto&&...args) noexcept(
-//            std::is_nothrow_constructible_v<decltype(underlying), decltype(args)...>) :
-//            underlying{std::forward<decltype(args)>(args)...} {
-//    }
-//
-//    //Constructor for other types of spans that can be converted to a span of bytes
-//    template<typename T>
-//        requires std::is_trivially_copyable_v<T>
-//    constexpr RefBuffer(std::span<T> sp) noexcept :
-//            underlying{std::launder(reinterpret_cast<std::byte *>(sp.data())), sp.size_bytes()} {
-//    }
-//
-//    //Constructor for arbitrary type pointers which can always be aliased by std::byte
-//    template<typename T>
-//        requires std::is_trivially_copyable_v<T>
-//    constexpr RefBuffer(T *const buf, const size_t len) noexcept :
-//            underlying{std::launder(reinterpret_cast<std::byte *>(buf)), len} {
-//    }
-//
-//    //Constructor for iovecs which are basically just a span of bytes
-//    constexpr RefBuffer(const ::iovec iov) noexcept : underlying{iov} {
-//    }
-//
-//    [[nodiscard]] constexpr auto data() const noexcept -> std::byte * {
-//        return static_cast<std::byte *>(this->underlying.iov_base);
-//    }
-//
-//    [[nodiscard]] constexpr auto size() const noexcept -> size_t {
-//        return this->underlying.iov_len;
-//    }
-//
-//    [[nodiscard]] constexpr auto as_iovec() const noexcept -> ::iovec {
-//        return underlying;
-//    }
-//
-//    [[nodiscard]] constexpr auto as_span() const noexcept -> std::span<std::byte> {
-//        return {static_cast<std::byte *>(this->underlying.iov_base), this->underlying.iov_len};
-//    }
-//
-//    [[nodiscard]] constexpr operator ::iovec() const noexcept {
-//        return this->underlying;
-//    }
-//    [[nodiscard]] constexpr operator ::iovec *() noexcept {
-//        return &this->underlying;
-//    }
-//    [[nodiscard]] constexpr operator std::span<std::byte>() const noexcept {
-//        return this->as_span();
-//    }
-//
-//    [[nodiscard]] constexpr std::byte& operator[](size_t idx) const noexcept {
-//        assert(idx <= underlying.iov_len);
-//        return static_cast<std::byte *>(this->underlying.iov_base)[idx];
-//    }
-//
-//    [[nodiscard]] constexpr auto begin() const noexcept -> std::byte * {
-//        return this->data();
-//    }
-//    [[nodiscard]] constexpr auto end() const noexcept -> std::byte * {
-//        return this->data() + this->size();
-//    }
-//    [[nodiscard]] constexpr auto cbegin() const noexcept -> const std::byte * {
-//        return this->data();
-//    }
-//    [[nodiscard]] constexpr auto cend() const noexcept -> const std::byte * {
-//        return this->data() + this->size();
-//    }
-//};
-//
-////Compiler errors to make sure a RefBuffer is as trivial as it should be
-//static_assert(std::is_trivially_copyable_v<RefBuffer>);
-//static_assert(std::is_trivially_copy_constructible_v<RefBuffer>);
-//static_assert(std::is_trivially_move_constructible_v<RefBuffer>);
-//static_assert(std::is_trivially_copy_assignable_v<RefBuffer>);
-//static_assert(std::is_trivially_move_assignable_v<RefBuffer>);
-//static_assert(std::is_trivially_destructible_v<RefBuffer>);
-//static_assert(std::is_nothrow_copy_constructible_v<RefBuffer>);
-//static_assert(std::is_nothrow_move_constructible_v<RefBuffer>);
-//static_assert(std::is_nothrow_copy_assignable_v<RefBuffer>);
-//static_assert(std::is_nothrow_move_assignable_v<RefBuffer>);
-//
-//static_assert(std::is_nothrow_convertible_v<RefBuffer, ::iovec>);
-//static_assert(std::is_standard_layout_v<RefBuffer>);
-//static_assert(sizeof(RefBuffer) == sizeof(::iovec));
-//static_assert(alignof(RefBuffer) == alignof(::iovec));
-////static_assert(std::is_convertible_v<RefBuffer *, ::iovec *>);
-////static_assert(std::is_convertible_v<RefBuffer *, ::iovec *>);
-////static_assert(std::is_nothrow_convertible_v<RefBuffer *, ::iovec *>);
-////static_assert(std::is_layout_compatible_v<RefBuffer, ::iovec>);
 
 class RefMultiBuffer {
     std::vector<RefBuffer> buffers;
