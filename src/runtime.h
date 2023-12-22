@@ -15,6 +15,7 @@
 namespace n3::runtime {
 
 //TODO: This is a one-time-only callback, do we want a second potential type for multi-call?
+//TODO: This has issues with void/empty call args like the result of std::bind to collapse them all
 template<typename... cArgs>
 class callback {
     std::move_only_function<void(cArgs...)> mf;

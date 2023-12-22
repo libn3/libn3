@@ -306,10 +306,9 @@ public:
     }
 };
 
-template<typename... CBA>
 class BufferQueue {
     RefMultiBuffer buffers;
-    std::deque<std::pair<n3::runtime::callback<CBA...>, size_t>> callbacks;
+    std::deque<std::pair<n3::runtime::callback<void>, size_t>> callbacks;
     size_t buffer_size;
     size_t buffer_bytes_size;
 
@@ -332,7 +331,7 @@ public:
         return this->buffer_size;
     }
 
-    constexpr void push(const RefBuffer buf, const n3::runtime::callback<CBA...> callback) {
+    constexpr void push(const RefBuffer buf, const n3::runtime::callback<void> callback) {
         const auto arg_buf_size_bytes = buf.size();
 
         this->buffer_size++;
@@ -340,7 +339,7 @@ public:
         this->buffers.push_back(std::move(buf));
         this->callbacks.emplace_back(std::move(callback), arg_buf_size_bytes);
     }
-    constexpr void push(const RefMultiBuffer multi, const n3::runtime::callback<CBA...> callback) {
+    constexpr void push(const RefMultiBuffer multi, const n3::runtime::callback<void> callback) {
         const auto arg_buf_size = multi.size();
         const auto arg_buf_size_bytes = multi.size_bytes();
 
@@ -355,30 +354,25 @@ public:
         }
 
         assert(bytes <= buffer_bytes_size);
+        assert(!this->callbacks.empty());
 
         this->buffers.consume(bytes);
         this->buffer_size = this->buffers.size();
 
-        //TODO: This should short-circuit on first non-erase callback and std::erase_if is linear
-        //TODO: Probably requires some kinda ranges algorithm piping
-        size_t sum = 0;
-        std::erase_if(this->callbacks, [&](auto& callback, auto& callback_size) {
-            const auto remaining = (bytes - sum);
-            const bool should_erase = (callback_size <= remaining);
-
-            const size_t callback_size_change = (should_erase) ? callback_size : remaining;
-
-            sum += callback_size;
-            this->buffer_bytes_size -= callback_size;
-
-            if (should_erase) {
-                //Call the callback
-                std::invoke(callback);
-            } else if (callback_size > remaining) {
-                callback_size -= remaining;
+        size_t remaining = bytes;
+        while (remaining > 0) {
+            auto& [cb, cb_size] = this->callbacks.front();
+            if (cb_size <= remaining) {
+                remaining -= cb_size;
+                std::invoke(cb);
+                this->callbacks.pop_front();
+            } else {
+                assert(cb_size > remaining);
+                cb_size -= remaining;
+                remaining = 0;
+                break;
             }
-            return should_erase;
-        });
+        }
     }
 };
 
