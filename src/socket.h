@@ -120,6 +120,7 @@ public:
     void send(const int sock, const RefBuffer buf, const int flags, F&& cb_func, Args&&...cb_args)
             const noexcept {
         //TODO: Verify that any child types that override match the same signature
+        //TODO: Probably going to remove this in favour of partial specialization for socket types
         if constexpr (std::is_member_function_pointer_v<decltype(&T::send)>) {
             return static_cast<T const *>(this)->send(sock, buf, flags);
         }

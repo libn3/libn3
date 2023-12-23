@@ -6,7 +6,6 @@
 namespace n3 {
 
 //TODO: This is a one-time-only callback, do we want a second potential type for multi-call?
-//TODO: This has issues with void/empty call args like the result of std::bind to collapse them all
 template<typename... cArgs>
 class callback {
     std::move_only_function<void(cArgs...)> mf;
@@ -42,6 +41,12 @@ public:
     }
 };
 
+/*
+ * Specialization for no call args since you can't do std::conditional_t<std::void_t, args...>
+ * to get void(void) to work due to syntax vs compile-time-evaluation ordering
+ * func<void(void)> is not the same as func<void(std::void_t<void>)> despite the fact that both
+ * condense down to an argument of "void" at compile time
+ */
 template<>
 class callback<void> {
     std::move_only_function<void()> mf;
