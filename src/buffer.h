@@ -112,7 +112,7 @@ public:
     }
 
     [[nodiscard]] constexpr auto as_iovec() const noexcept -> ::iovec {
-        return underlying;
+        return this->underlying;
     }
 
     [[nodiscard]] constexpr auto as_span() const noexcept -> std::span<std::byte> {
@@ -226,9 +226,11 @@ public:
     }
 
     [[nodiscard]] constexpr operator ::iovec *() noexcept {
+        assert(!this->buffers.empty());
         return reinterpret_cast<::iovec *>(this->buffers.data());
     }
     [[nodiscard]] constexpr operator const ::iovec *() const noexcept {
+        assert(!this->buffers.empty());
         return reinterpret_cast<const ::iovec *>(this->buffers.data());
     }
 
