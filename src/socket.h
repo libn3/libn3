@@ -164,7 +164,7 @@ public:
              *       - transparently switch to vectored read/write syscalls (multiple refbuffers queued up)
              * I WANT TO BE CLEVER ABOUT IT!!!
              */
-            [[maybe_unused]] n3::runtime::callback<std::expected<size_t, error::ErrorCode>> cb{
+            [[maybe_unused]] n3::callback<std::expected<size_t, error::ErrorCode>> cb{
                     std::forward<F>(cb_func), std::forward<Args...>(cb_args...)};
             return;
         }

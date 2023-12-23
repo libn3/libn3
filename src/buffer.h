@@ -13,11 +13,7 @@
 #include <utility>
 #include <vector>
 
-//Forward declaration
-namespace n3::runtime {
-template<typename...>
-class callback;
-}
+#include "callbacks.h"
 
 namespace n3 {
 
@@ -308,21 +304,21 @@ public:
 
 class BufferQueue {
     RefMultiBuffer buffers;
-    std::deque<std::pair<n3::runtime::callback<void>, size_t>> callbacks;
+    std::deque<std::pair<n3::callback<void>, size_t>> callbacks;
     size_t buffer_size;
     size_t buffer_bytes_size;
 
 public:
     //Default constructor
-    constexpr BufferQueue() = default;
+    BufferQueue() = default;
 
     //Move constructible only
-    constexpr BufferQueue(const BufferQueue&) = delete;
-    constexpr BufferQueue(BufferQueue&&) = default;
+    BufferQueue(const BufferQueue&) = delete;
+    BufferQueue(BufferQueue&&) = default;
 
     //Move assignable only
-    constexpr BufferQueue& operator=(const BufferQueue&) = delete;
-    constexpr BufferQueue& operator=(BufferQueue&&) = default;
+    BufferQueue& operator=(const BufferQueue&) = delete;
+    BufferQueue& operator=(BufferQueue&&) = default;
 
     [[nodiscard]] constexpr auto empty() const noexcept -> size_t {
         return this->buffer_size == 0;
@@ -331,7 +327,7 @@ public:
         return this->buffer_size;
     }
 
-    constexpr void push(const RefBuffer buf, const n3::runtime::callback<void> callback) {
+    constexpr void push(const RefBuffer buf, n3::callback<void>&& callback) {
         const auto arg_buf_size_bytes = buf.size();
 
         this->buffer_size++;
@@ -339,7 +335,7 @@ public:
         this->buffers.push_back(std::move(buf));
         this->callbacks.emplace_back(std::move(callback), arg_buf_size_bytes);
     }
-    constexpr void push(const RefMultiBuffer multi, const n3::runtime::callback<void> callback) {
+    constexpr void push(const RefMultiBuffer multi, n3::callback<void>&& callback) {
         const auto arg_buf_size = multi.size();
         const auto arg_buf_size_bytes = multi.size_bytes();
 
@@ -364,7 +360,7 @@ public:
             auto& [cb, cb_size] = this->callbacks.front();
             if (cb_size <= remaining) {
                 remaining -= cb_size;
-                std::invoke(cb);
+                std::invoke(std::move(cb));
                 this->callbacks.pop_front();
             } else {
                 assert(cb_size > remaining);

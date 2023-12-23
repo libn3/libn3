@@ -10,8 +10,6 @@
 #include <utility>
 #include <variant>
 
-#include "buffer.h"
-
 /*
  * TODO: I don't like this design for error codes, need a better one that's more ergonomic
  * Issue is that there's too much complexity being condensed down in a way that isn't reasonable

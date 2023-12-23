@@ -54,6 +54,7 @@ SET(COMMON
     "src/dns.cpp"
     "src/runtime.cpp"
     "src/address.cpp"
+    "src/callbacks.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS
