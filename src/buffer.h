@@ -365,12 +365,16 @@ public:
                 remaining -= cb_size;
                 std::invoke(std::move(cb));
                 this->callbacks.pop_front();
-            } else {
-                assert(cb_size > remaining);
-                cb_size -= remaining;
-                remaining = 0;
-                break;
+                /*
+                 * pop_front() invalidates the .front() references above, so explicitly
+                 * continue here to prevent any accidental further loop logic using them
+                 */
+                continue;
             }
+            assert(cb_size > remaining);
+            cb_size -= remaining;
+            remaining = 0;
+            break;
         }
     }
 };
