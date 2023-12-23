@@ -359,6 +359,7 @@ public:
 
         size_t remaining = bytes;
         while (remaining > 0) {
+            assert(!this->callbacks.empty());
             auto& [cb, cb_size] = this->callbacks.front();
             if (cb_size <= remaining) {
                 remaining -= cb_size;

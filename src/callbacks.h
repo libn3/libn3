@@ -21,11 +21,11 @@ public:
     constexpr callback(F&& func) : mf{std::forward<F>(func)} {
     }
 
-    constexpr callback(const callback&) noexcept = delete;
-    constexpr callback(callback&&) noexcept = default;
+    callback(const callback&) noexcept = delete;
+    callback(callback&&) noexcept = default;
 
-    constexpr callback& operator=(const callback&) noexcept = delete;
-    constexpr callback& operator=(callback&&) noexcept = default;
+    callback& operator=(const callback&) noexcept = delete;
+    callback& operator=(callback&&) noexcept = default;
 
     /*
      * The && at the end signifies that this is only callable by rvalue references of *this
@@ -34,7 +34,8 @@ public:
      * a compile time error if the user doesn't std::move() the object when calling the callback
      */
     constexpr void operator()(cArgs&&...call_args) && noexcept(
-            noexcept(this->mf(std::forward<cArgs>(call_args)...))) {
+            std::is_nothrow_invocable_v<decltype(std::move(this->mf)),
+                    decltype(std::forward<cArgs>(call_args))...>) {
         std::invoke(std::move(this->mf), std::forward<cArgs>(call_args)...);
         //TODO: Would like to do something like empty out the function after usage by setting nullptr
         //Problem is, calling operator() on an empty std::move_only_function is UB, so I'd have to throw something myself
@@ -67,7 +68,8 @@ public:
      * And with it added explicitly, that means the lvalue reference call doesn't exist, so we get
      * a compile time error if the user doesn't std::move() the object when calling the callback
      */
-    constexpr void operator()() && noexcept(noexcept(std::invoke(std::move(this->mf)))) {
+    constexpr void operator()() && noexcept(
+            std::is_nothrow_invocable_v<decltype(std::move(this->mf))>) {
         std::invoke(std::move(this->mf));
         //TODO: Would like to do something like empty out the function after usage by setting nullptr
         //Problem is, calling operator() on an empty std::move_only_function is UB, so I'd have to throw something myself
