@@ -2,7 +2,7 @@
 
 #include "handle.h"
 
-namespace n3::linux {
+namespace n3 {
 
 OwnedHandle::OwnedHandle(const int fd_arg) noexcept : fd{fd_arg} {
 }
@@ -12,4 +12,4 @@ OwnedHandle::~OwnedHandle() noexcept {
     close(this->fd);
 }
 
-} // namespace n3::linux
+} // namespace n3

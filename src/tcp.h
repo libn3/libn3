@@ -8,16 +8,17 @@
 #include <vector>
 
 #include "error.h"
+#include "handle.h"
 #include "socket.h"
 
 namespace n3::net::linux::tcp {
 
 class TcpSocket : public n3::net::linux::socket<TcpSocket> {
-    const int sock;
+    OwnedHandle sock;
 
 public:
     TcpSocket();
-    TcpSocket(const int sock_arg);
+    TcpSocket(const Handle sock_arg);
     TcpSocket(const std::string_view ip_str, const std::string_view port_str);
     TcpSocket(const std::string_view ip_str, const uint16_t port_str);
 

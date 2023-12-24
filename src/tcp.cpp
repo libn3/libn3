@@ -27,6 +27,7 @@
 #include "tcp.h"
 
 #include "error.h"
+#include "handle.h"
 
 namespace n3::net::linux::tcp {
 
@@ -38,11 +39,12 @@ TcpSocket::TcpSocket() :
 }
 
 TcpSocket::~TcpSocket() noexcept {
-    //No good way to handle error returns, maybe an eventual "cleanup error callback function?"
-    close(this->sock);
+    //Shutdown the TCP socket cleanly
+    shutdown(this->sock, SHUT_RDWR);
+    //Socket fd close handled by the OwnedHandle destructor
 }
 
-TcpSocket::TcpSocket(const int sock_arg) : sock{sock_arg} {
+TcpSocket::TcpSocket(const Handle sock_arg) : sock{sock_arg} {
 }
 
 //socket::socket(const std::string_view ip_str, const std::string_view port_str) {

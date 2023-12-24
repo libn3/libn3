@@ -1,6 +1,6 @@
 #pragma once
 
-namespace n3::linux {
+namespace n3 {
 
 using Handle = int;
 
@@ -23,4 +23,4 @@ public:
     }
 };
 
-} // namespace n3::linux
+} // namespace n3
