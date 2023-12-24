@@ -10,12 +10,13 @@
 #include <vector>
 
 #include "error.h"
+#include "handle.h"
 
 namespace n3::linux::epoll {
 
 class epoll_handle {
 public:
-    const int efd;
+    const Handle efd;
 
     epoll_handle();
     ~epoll_handle() noexcept;
@@ -31,7 +32,7 @@ class epoll_ctx {
     static constexpr size_t EVENT_BUFFER_SIZE = 32768;
 
     const epoll_handle efd;
-    std::vector<int> descriptors;
+    std::vector<Handle> descriptors;
     std::array<::epoll_event, EVENT_BUFFER_SIZE> events;
 
 public:
@@ -42,9 +43,9 @@ public:
     epoll_ctx& operator=(const epoll_ctx&) noexcept = default;
     epoll_ctx& operator=(epoll_ctx&&) noexcept = default;
 
-    //TODO: Strongly type the fd instead of using int
-    [[nodiscard]] auto add(const int fd) noexcept -> const std::expected<void, error::ErrorCode>;
-    [[nodiscard]] auto remove(const int fd) noexcept -> const std::expected<void, error::ErrorCode>;
+    [[nodiscard]] auto add(const Handle fd) noexcept -> const std::expected<void, error::ErrorCode>;
+    [[nodiscard]] auto remove(const Handle fd) noexcept
+            -> const std::expected<void, error::ErrorCode>;
     //TODO: Wrap the raw epoll_event struct into my own type?
     [[nodiscard]] auto wait(const std::optional<const std::chrono::milliseconds>& timeout_ms
             = std::nullopt) noexcept

@@ -14,6 +14,7 @@
 #include "epoll.h"
 
 #include "error.h"
+#include "handle.h"
 
 namespace n3::linux::epoll {
 
@@ -32,11 +33,12 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
     descriptors.reserve(epoll_ctx::EVENT_BUFFER_SIZE);
 }
 
-[[nodiscard]] auto epoll_ctx::add(const int fd) noexcept
+[[nodiscard]] auto epoll_ctx::add(Handle fd) noexcept
         -> const std::expected<void, error::ErrorCode> {
     static constexpr auto EVENT_MASK = (EPOLLIN | EPOLLOUT | EPOLLET | EPOLLEXCLUSIVE);
-    ::epoll_event event {
-        .events = EVENT_MASK, .data{.ptr = this},
+    ::epoll_event event{
+            .events = EVENT_MASK,
+            .data{.ptr = this},
     };
 
     const auto ret = epoll_ctl(this->efd.efd, EPOLL_CTL_ADD, fd, &event);
@@ -47,7 +49,7 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
     return {};
 }
 
-[[nodiscard]] auto epoll_ctx::remove(const int fd) noexcept
+[[nodiscard]] auto epoll_ctx::remove(Handle fd) noexcept
         -> const std::expected<void, error::ErrorCode> {
     const auto ret = epoll_ctl(this->efd.efd, EPOLL_CTL_DEL, fd, nullptr);
     if (ret == -1) {

@@ -5,14 +5,14 @@
 
 #include "epoll.h"
 #include "error.h"
+#include "handle.h"
 
 namespace n3::linux::epoll {
 
 epoll_executor::epoll_executor() : epoll{} {
 }
 
-//TODO: Need to have a proper handle type to pass in here or template off of
-[[nodiscard]] auto epoll_executor::add(const int fd) noexcept
+[[nodiscard]] auto epoll_executor::add(Handle fd) noexcept
         -> const std::expected<void, error::ErrorCode> {
     return this->epoll.add(fd);
 }

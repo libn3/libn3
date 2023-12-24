@@ -5,6 +5,7 @@
 #include "buffer.h"
 #include "epoll.h"
 #include "error.h"
+#include "handle.h"
 
 namespace n3::linux::epoll {
 class epoll_executor {
@@ -16,8 +17,7 @@ class epoll_executor {
 public:
     epoll_executor();
 
-    //TODO: Need to have a proper handle type to pass in here or template off of
-    [[nodiscard]] auto add(const int fd) noexcept -> const std::expected<void, error::ErrorCode>;
+    [[nodiscard]] auto add(Handle fd) noexcept -> const std::expected<void, error::ErrorCode>;
 
     /*
      * TODO: Need a few more functions

@@ -24,10 +24,10 @@ public:
 
     ~TcpSocket() noexcept;
 
-    TcpSocket(const TcpSocket&) = delete;
+    TcpSocket(const TcpSocket&) noexcept = delete;
     TcpSocket(TcpSocket&&) noexcept = default;
 
-    TcpSocket& operator=(const TcpSocket&) = delete;
+    TcpSocket& operator=(const TcpSocket&) noexcept = delete;
     TcpSocket& operator=(TcpSocket&&) noexcept = default;
 };
 
