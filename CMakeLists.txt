@@ -55,6 +55,7 @@ SET(COMMON
     "src/runtime.cpp"
     "src/address.cpp"
     "src/callbacks.cpp"
+    "src/handle.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS
