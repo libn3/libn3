@@ -17,6 +17,11 @@ epoll_executor::epoll_executor() : epoll{} {
     return this->epoll.add(fd);
 }
 
+[[nodiscard]] auto epoll_executor::remove(Handle fd) noexcept
+        -> const std::expected<void, error::ErrorCode> {
+    return this->epoll.remove(fd);
+}
+
 void epoll_executor::run_once() {
     const auto events = this->epoll.wait();
     if (!events.has_value()) {

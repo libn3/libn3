@@ -14,6 +14,11 @@
 
 namespace n3::linux::epoll {
 
+/*
+ * TODO: Is this even useful anymore?
+ * Can probably get away with hiding it in the epoll_ctx and using the OwnedHandle type
+ * for the RAII cleanup aspects
+ */
 class epoll_handle {
 public:
     const Handle efd;
