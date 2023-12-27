@@ -1,6 +1,7 @@
 #pragma once
 
 #include <expected>
+#include <unordered_map>
 
 #include "buffer.h"
 #include "epoll.h"
@@ -8,11 +9,25 @@
 #include "handle.h"
 
 namespace n3::linux::epoll {
+
+//TODO: Naming
+//TODO: Anything else needed to be stored here?
+//TODO: Encapsulation semantics or RAII useful here?
+struct epoll_handle_state {
+    //Not an OwnedHandle because this is a weak reference that should not affect lifetimes
+    Handle fd;
+    BufferQueue tx_queue;
+    BufferQueue rx_queue;
+    //Whether the handle is known to be readable/writable already (did we hit EAGAIN after epoll?)
+    bool tx_active;
+    bool rx_active;
+};
+
 class epoll_executor {
     epoll_ctx epoll;
     bool active;
 
-    n3::PageBuffer read_buffer;
+    std::unordered_map<Handle, epoll_handle_state> handle_map;
 
 public:
     epoll_executor();
