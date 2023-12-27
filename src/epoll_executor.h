@@ -38,15 +38,15 @@ class ExecutorOwnedHandle {
     epoll_executor& exec;
 
 public:
-    explicit ExecutorOwnedHandle(epoll_executor& executor, const Handle fd_arg) noexcept :
+    explicit ExecutorOwnedHandle(epoll_executor& executor, const Handle fd_arg) :
             fd{fd_arg},
             exec{executor} {
         //.value() on std::expected will throw if the call fails
         this->exec.add(this->fd).value();
     }
-    ~ExecutorOwnedHandle() noexcept {
-        //.value() on std::expected will throw if the call fails
-        this->exec.remove(this->fd).value();
+    ~ExecutorOwnedHandle() {
+        //Don't throw on failure, treat it like closing a socket
+        [[maybe_unused]] const auto _ = this->exec.remove(this->fd);
     }
 
     constexpr ExecutorOwnedHandle(const ExecutorOwnedHandle&) noexcept = delete;

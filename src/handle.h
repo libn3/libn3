@@ -9,7 +9,7 @@ class OwnedHandle {
 
 public:
     explicit OwnedHandle(const Handle fd_arg) noexcept;
-    ~OwnedHandle() noexcept;
+    ~OwnedHandle();
 
     constexpr OwnedHandle(const OwnedHandle&) noexcept = delete;
     constexpr OwnedHandle(OwnedHandle&&) noexcept = default;
