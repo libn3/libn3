@@ -3,6 +3,8 @@
 #include <chrono>
 #include <optional>
 
+#include "heap.h"
+
 namespace n3 {
 
 class Timer {
@@ -98,7 +100,7 @@ public:
 };
 
 class TimerList {
-    std::vector<Timer> timers;
+    Heap<Timer> timer_heap;
 
 public:
     TimerList() noexcept = default;

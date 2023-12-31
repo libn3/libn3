@@ -57,6 +57,7 @@ SET(COMMON
     "src/callbacks.cpp"
     "src/handle.cpp"
     "src/timer_list.cpp"
+    "src/heap.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS
