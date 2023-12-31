@@ -2,8 +2,7 @@
 
 #include <chrono>
 #include <optional>
-
-#include "heap.h"
+#include <queue>
 
 namespace n3 {
 
@@ -100,7 +99,7 @@ public:
 };
 
 class TimerList {
-    Heap<Timer> timer_heap;
+    std::priority_queue<Timer> timer_heap;
 
 public:
     TimerList() noexcept = default;
