@@ -29,8 +29,7 @@ epoll_handle::~epoll_handle() noexcept {
     close(this->efd);
 }
 
-epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
-    descriptors.reserve(epoll_ctx::EVENT_BUFFER_SIZE);
+epoll_ctx::epoll_ctx() : efd{}, events{} {
 }
 
 [[nodiscard]] auto epoll_ctx::add(Handle fd) noexcept
@@ -45,7 +44,6 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
     if (ret == -1) {
         return std::unexpected(error::get_error_code_from_errno(errno));
     }
-    this->descriptors.emplace_back(fd);
     return {};
 }
 
@@ -55,7 +53,6 @@ epoll_ctx::epoll_ctx() : efd{}, descriptors{}, events{} {
     if (ret == -1) {
         return std::unexpected(error::get_error_code_from_errno(errno));
     }
-    this->descriptors.emplace_back(fd);
     return {};
 }
 

@@ -37,7 +37,6 @@ class epoll_ctx {
     static constexpr size_t EVENT_BUFFER_SIZE = 32768;
 
     const epoll_handle efd;
-    std::vector<Handle> descriptors;
     std::array<::epoll_event, EVENT_BUFFER_SIZE> events;
 
 public:
@@ -51,7 +50,6 @@ public:
     [[nodiscard]] auto add(const Handle fd) noexcept -> const std::expected<void, error::ErrorCode>;
     [[nodiscard]] auto remove(const Handle fd) noexcept
             -> const std::expected<void, error::ErrorCode>;
-    //TODO: Wrap the raw epoll_event struct into my own type?
     [[nodiscard]] auto wait(const std::optional<const std::chrono::milliseconds>& timeout_ms
             = std::nullopt) noexcept
             -> const std::expected<std::span<const ::epoll_event>, error::ErrorCode>;
