@@ -1,6 +1,7 @@
 #pragma once
 
 #include <coroutine>
+#include <cstdint>
 #include <exception>
 #include <expected>
 #include <unordered_map>
@@ -12,17 +13,69 @@
 
 namespace n3::linux::epoll {
 
+//Bit field representing epoll event types as flags
+struct events {
+    unsigned int in : 1;
+    unsigned int out : 1;
+    unsigned int rdhup : 1;
+    unsigned int pri : 1;
+    unsigned int err : 1;
+    unsigned int hup : 1;
+
+    constexpr events() noexcept = default;
+    constexpr events(const uint32_t epoll_events) noexcept :
+            in{epoll_events & EPOLLIN},
+            out{epoll_events & EPOLLOUT},
+            rdhup{epoll_events & EPOLLRDHUP},
+            pri{epoll_events & EPOLLPRI},
+            err{epoll_events & EPOLLERR},
+            hup{epoll_events & EPOLLHUP} {
+    }
+
+    //Sanity check if any events are raised that ARE NOT read or write
+    constexpr bool has_error() const noexcept {
+        if (this->rdhup) {
+            return true;
+        }
+        if (this->pri) {
+            return true;
+        }
+        if (this->err) {
+            return true;
+        }
+        if (this->hup) {
+            return true;
+        }
+        return false;
+    }
+};
+
 //TODO: Naming
 //TODO: Anything else needed to be stored here?
 //TODO: Encapsulation semantics or RAII useful here?
 struct epoll_handle_state {
     //Not an OwnedHandle because this is a weak reference that should not affect lifetimes
     Handle fd;
+    /*
+     * TODO: Buffer queues don't make as much sense here after further thought
+     * The main "work" horse here is going to be the read/write coroutines that need to be handled
+     * So having a work queue as a FIFO based on user requests is a great plan
+     * The issue is that we're doing coroutines, not callbacks, so this doesn't work
+     * Additionally, since a read coroutine and a write coroutine are both coroutines that can
+     * be type erased between each other, we can flatten them into a single work queue stream
+     * of coroutine handles that need to be resumed
+     *
+     * Can simply model them as "wants read" vs "wants write", and then funnel them that way
+     * Any error events call the main work queue head event with the error instead of the normal
+     * resumption
+     */
     BufferQueue tx_queue;
     BufferQueue rx_queue;
-    //Whether the handle is known to be readable/writable already (did we hit EAGAIN after epoll?)
-    bool tx_active;
-    bool rx_active;
+    /*
+     * Current known event values for the handle
+     * Is updated by returned epoll events and read/write calls hitting EAGAIN
+     */
+    struct events event_cache;
 };
 
 /*

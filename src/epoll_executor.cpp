@@ -33,7 +33,13 @@ void epoll_executor::run_once() {
         return;
     }
     assert(events.has_value());
-    //TODO: Where and how am I managing the epoll return values?
+
+    std::ranges::for_each(events.value(), [&](const ::epoll_event& epoll_event) {
+        const struct events event_flags = {epoll_event.events};
+        const Handle handle = epoll_event.data.fd;
+        this->handle_map[handle].event_cache = event_flags;
+    });
+    //TODO: What else am I doing other than updating the event cache?
 }
 
 void epoll_executor::run() {
