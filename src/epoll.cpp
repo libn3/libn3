@@ -58,7 +58,7 @@ epoll_ctx::epoll_ctx() : efd{}, events{} {
 
 [[nodiscard]] auto epoll_ctx::wait(
         const std::optional<const std::chrono::milliseconds>& timeout_ms) noexcept
-        -> const std::expected<std::span<const ::epoll_event>, error::ErrorCode> {
+        -> const std::expected<const std::span<const ::epoll_event>, error::ErrorCode> {
     //Zero will block forever if the timeout optional is empty
     const int epoll_timeout = timeout_ms.value_or(std::chrono::milliseconds{0}).count();
     const auto ret

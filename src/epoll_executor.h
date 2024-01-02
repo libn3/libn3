@@ -51,6 +51,18 @@ class epoll_executor {
 
     std::unordered_map<Handle, epoll_handle_state> handle_map;
 
+    /*
+     * TODO: I can't implement this yet because it's too bleeding edge...
+     * std::generator support is only added in GCC 14, and that hasn't been released yet.
+     * So in a few weeks/months whenever that does happen, I can restart this work, but until then
+     * I don't think I want to build a custom generator coroutine object for something about to
+     * be available from the standard.
+     */
+    /*
+    [[nodiscard]] auto test() -> std::generator<
+            std::expected<const std::span<const ::epoll_event>, error::ErrorCode>>;
+    */
+
 public:
     epoll_executor();
 

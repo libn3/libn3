@@ -52,7 +52,7 @@ public:
             -> const std::expected<void, error::ErrorCode>;
     [[nodiscard]] auto wait(const std::optional<const std::chrono::milliseconds>& timeout_ms
             = std::nullopt) noexcept
-            -> const std::expected<std::span<const ::epoll_event>, error::ErrorCode>;
+            -> const std::expected<const std::span<const ::epoll_event>, error::ErrorCode>;
 };
 
 } // namespace n3::linux::epoll

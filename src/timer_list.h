@@ -103,8 +103,8 @@ class TimerList {
     std::priority_queue<Timer> timer_heap;
 
     constexpr void update() {
-        const auto& next_timer = this->timer_heap.top();
-        if (next_timer.has_elapsed()) {
+        //const auto& next_timer = this->timer_heap.top();
+        //if (next_timer.has_elapsed()) {
             /*
              * TODO: What do I want to put here?
              * This gets into timer semantics in general, which I love, but also feels a bit
@@ -118,7 +118,7 @@ class TimerList {
              * I'll probably have to ping-pong between the two areas to fill out my coroutine
              * boilerplate knowledge piece by piece as I try to develop both of them
              */
-        }
+        //}
     }
 
 public:
