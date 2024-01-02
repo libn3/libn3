@@ -322,7 +322,7 @@ public:
     BufferQueue& operator=(const BufferQueue&) = delete;
     BufferQueue& operator=(BufferQueue&&) = default;
 
-    [[nodiscard]] constexpr auto empty() const noexcept -> size_t {
+    [[nodiscard]] constexpr auto empty() const noexcept -> bool {
         return this->buffer_size == 0;
     }
     [[nodiscard]] constexpr auto size() const noexcept -> size_t {
