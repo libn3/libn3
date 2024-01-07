@@ -171,13 +171,60 @@ public:
     EpollEventGenerator() noexcept = default;
 };
 
-template<typename T>
+/*
+ * TODO: Does this even make sense?
+ * I wanted to make an RAII wrapper for a coroutine handle since I'll be making a few different
+ * coroutine objects in the library here, and I don't want to write the same destructor destroy
+ * wrapper every single time
+ * This should be like unique_ptr, just cleans up automatically to manage the resource, and that's
+ * it
+ */
+template<typename T = void>
+class OwnedCoroutine {
+    using HandleType = std::coroutine_handle<T>;
+
+    HandleType coro;
+
+public:
+    OwnedCoroutine() : coro{nullptr} {
+    }
+    OwnedCoroutine(HandleType&& handle) noexcept : coro{std::move(handle)} {
+    }
+    OwnedCoroutine(const OwnedCoroutine& oc) = delete;
+    OwnedCoroutine(OwnedCoroutine&& oc) noexcept : coro{std::move(oc.coro)} {
+        oc.coro = HandleType::from_address(nullptr);
+    }
+
+    OwnedCoroutine(auto&&...args) noexcept(
+            std::is_nothrow_constructible_v<decltype(this->coro), decltype(args)...>) :
+            coro{std::forward<decltype(args)>(args)...} {
+    }
+
+    ~OwnedCoroutine() {
+        if (this->coro) {
+            this->coro.destroy();
+        }
+    }
+
+    OwnedCoroutine& operator=(const OwnedCoroutine&) = delete;
+    OwnedCoroutine& operator=(OwnedCoroutine&& oc) noexcept {
+        this->coro = std::move(oc.coro);
+        oc.coro = HandleType::from_address(nullptr);
+    }
+
+    constexpr operator OwnedCoroutine<>() const noexcept {
+        return auto{std::coroutine_handle<>::from_address(this->coro.address())};
+    }
+};
+
 class EpollTask {
     struct promise_type;
     using handle_type = std::coroutine_handle<promise_type>;
 
+    OwnedCoroutine<promise_type> coro_handle;
+
     struct promise_type {
-        T value;
+        struct events epoll_events;
         std::exception_ptr eptr;
 
         EpollTask get_return_object() {
@@ -192,17 +239,14 @@ class EpollTask {
         void unhandled_exception() {
             eptr = std::current_exception();
         }
-        template<std::convertible_to<T> From>
-        std::suspend_always yield_value(From&& from) {
-            value = std::forward<From>(from);
-            return {};
-        }
         void return_void() {
         }
     };
 
 public:
-    EpollTask() = default;
+    EpollTask() noexcept = default;
+    EpollTask(handle_type handle) noexcept : coro_handle{handle} {
+    }
 };
 
 }; // namespace n3::linux::epoll
