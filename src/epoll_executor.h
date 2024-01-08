@@ -249,4 +249,15 @@ public:
     }
 };
 
+struct EpollAwaitable {
+    bool await_ready() {
+        return false;
+    }
+    void await_suspend(std::coroutine_handle<> h) {
+        h.resume();
+    }
+    void await_resume() {
+    }
+};
+
 }; // namespace n3::linux::epoll
