@@ -207,13 +207,14 @@ public:
         return auto{std::coroutine_handle<>::from_address(this->coro.address())};
     }
 
-    constexpr std::strong_ordering operator<=>(const OwnedCoroutine&) const noexcept = default;
-    constexpr std::strong_ordering operator<=>(
+    [[nodiscard]] constexpr std::strong_ordering operator<=>(const OwnedCoroutine&) const noexcept
+            = default;
+    [[nodiscard]] constexpr std::strong_ordering operator<=>(
             const std::coroutine_handle<>& other) const noexcept {
         return this->coro <=> other;
     }
 
-    bool done() const {
+    [[nodiscard]] bool done() const {
         return this->coro.done();
     }
 
@@ -221,7 +222,7 @@ public:
         return this->coro.resume();
     }
 
-    auto& promise() const
+    [[nodiscard]] auto& promise() const
         requires(!std::is_void_v<T>)
     {
         return this->coro.promise();

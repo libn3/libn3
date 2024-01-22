@@ -99,6 +99,7 @@ SET(COMMON
     "src/callbacks.cpp"
     "src/handle.cpp"
     "src/timer_list.cpp"
+    "src/io_uring.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS
