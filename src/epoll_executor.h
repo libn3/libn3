@@ -171,14 +171,6 @@ public:
     EpollEventGenerator() noexcept = default;
 };
 
-/*
- * TODO: Does this even make sense?
- * I wanted to make an RAII wrapper for a coroutine handle since I'll be making a few different
- * coroutine objects in the library here, and I don't want to write the same destructor destroy
- * wrapper every single time
- * This should be like unique_ptr, just cleans up automatically to manage the resource, and that's
- * it
- */
 template<typename T = void>
 class OwnedCoroutine {
     using HandleType = std::coroutine_handle<T>;
