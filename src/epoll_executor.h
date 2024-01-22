@@ -191,8 +191,8 @@ public:
     OwnedCoroutine(HandleType&& handle) noexcept : coro{std::move(handle)} {
     }
     OwnedCoroutine(const OwnedCoroutine& oc) = delete;
-    OwnedCoroutine(OwnedCoroutine&& oc) noexcept : coro{std::move(oc.coro)} {
-        oc.coro = HandleType::from_address(nullptr);
+    OwnedCoroutine(OwnedCoroutine&& oc) noexcept :
+            coro{std::exchange(oc.coro, HandleType::from_address(nullptr))} {
     }
 
     OwnedCoroutine(auto&&...args) noexcept(
@@ -208,12 +208,31 @@ public:
 
     OwnedCoroutine& operator=(const OwnedCoroutine&) = delete;
     OwnedCoroutine& operator=(OwnedCoroutine&& oc) noexcept {
-        this->coro = std::move(oc.coro);
-        oc.coro = HandleType::from_address(nullptr);
+        this->coro = std::exchange(oc.coro, HandleType::from_address(nullptr));
     }
 
     constexpr operator OwnedCoroutine<>() const noexcept {
         return auto{std::coroutine_handle<>::from_address(this->coro.address())};
+    }
+
+    constexpr std::strong_ordering operator<=>(const OwnedCoroutine&) const noexcept = default;
+    constexpr std::strong_ordering operator<=>(
+            const std::coroutine_handle<>& other) const noexcept {
+        return this->coro <=> other;
+    }
+
+    bool done() const {
+        return this->coro.done();
+    }
+
+    void resume() const {
+        return this->coro.resume();
+    }
+
+    auto& promise() const
+        requires(!std::is_void_v<T>)
+    {
+        return this->coro.promise();
     }
 };
 
