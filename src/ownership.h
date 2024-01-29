@@ -12,10 +12,8 @@ class MoveOnly {
     std::optional<std::decay_t<T>> inner;
 
 public:
-    constexpr MoveOnly(void)
-        requires(std::is_default_constructible_v<std::decay_t<T>>)
-            : inner{} {
-    }
+    constexpr MoveOnly(void) = default;
+
     template<typename... Args>
         requires std::constructible_from<std::decay_t<T>, Args...>
     constexpr MoveOnly(Args&&...args) :
@@ -38,10 +36,6 @@ public:
         return this->inner.has_value();
     }
 
-    //[[nodiscard]] constexpr operator std::optional<std::decay_t<T>>() noexcept {
-    //    return std::exchange(this->inner, std::nullopt);
-    //}
-
     constexpr T *operator->() noexcept {
         return &*this->inner;
     }
@@ -49,11 +43,17 @@ public:
         return &*this->inner;
     }
 
-    constexpr T& operator*() noexcept {
+    constexpr T& operator*() & noexcept {
         return *this->inner;
     }
-    constexpr const T& operator*() const noexcept {
+    constexpr const T& operator*() const& noexcept {
         return *this->inner;
+    }
+    constexpr const T& operator*() const&& noexcept {
+        return *this->inner;
+    }
+    constexpr T&& operator*() && noexcept {
+        return std::move(*this->inner);
     }
 };
 
