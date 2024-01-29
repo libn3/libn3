@@ -6,7 +6,6 @@
 #include <deque>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <ranges>
 #include <span>
 #include <sys/uio.h>
@@ -287,18 +286,6 @@ public:
 static_assert(std::is_nothrow_default_constructible_v<RefMultiBuffer>);
 static_assert(std::is_nothrow_move_constructible_v<RefMultiBuffer>);
 static_assert(std::is_nothrow_move_assignable_v<RefMultiBuffer>);
-
-class PageSize {
-    static size_t PAGE_SIZE;
-    static std::once_flag page_size_init_flag;
-
-public:
-    static size_t get() {
-        std::call_once(page_size_init_flag,
-                [&] { PAGE_SIZE = sysconf(_SC_PAGESIZE).value_or(4096); });
-        return PAGE_SIZE;
-    }
-};
 
 /*
  * A simple memory page buffer that checks the page size at runtime

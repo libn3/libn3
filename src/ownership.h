@@ -19,7 +19,7 @@ public:
     template<typename... Args>
         requires std::constructible_from<std::decay_t<T>, Args...>
     constexpr MoveOnly(Args&&...args) :
-            inner{std::make_optional(std::forward<decltype(args)>(args)...)} {
+            inner{std::make_optional<std::decay_t<T>>(std::forward<decltype(args)>(args)...)} {
     }
 
     //Move constructible only
@@ -38,9 +38,9 @@ public:
         return this->inner.has_value();
     }
 
-    [[nodiscard]] constexpr operator std::optional<std::decay_t<T>>() noexcept {
-        return std::exchange(this->inner, std::nullopt);
-    }
+    //[[nodiscard]] constexpr operator std::optional<std::decay_t<T>>() noexcept {
+    //    return std::exchange(this->inner, std::nullopt);
+    //}
 
     constexpr T *operator->() noexcept {
         return &*this->inner;
@@ -56,8 +56,5 @@ public:
         return *this->inner;
     }
 };
-
-static constexpr MoveOnly<int> test{};
-static constexpr MoveOnly<int> mytest{3};
 
 }; // namespace n3

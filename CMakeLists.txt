@@ -107,6 +107,7 @@ SET(COMMON
     "src/timer_list.cpp"
     "src/io_uring.cpp"
     "src/ownership.cpp"
+    "src/page_size.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS
@@ -138,17 +139,21 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(Catch2)
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 
 set(TEST_SOURCES
-    "test/ownership.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/test/ownership.cpp"
 )
 
-add_executable(test_binary ${TEST_SOURCES})
-target_link_libraries(test_binary PRIVATE n3 Catch2::Catch2WithMain)
+add_executable(tests ${TEST_SOURCES})
+target_link_libraries(tests PRIVATE n3 Catch2::Catch2WithMain)
 
-#target_compile_options(test_binary
+#target_compile_options(tests
 #    PRIVATE ${WARNINGS}
 #    PUBLIC "$<$<CONFIG:DEBUG>:${DEBUG_OPTIONS}>" "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>")
-target_compile_definitions(test_binary PRIVATE "$<$<CONFIG:RELEASE>:NDEBUG>")
-target_include_directories(test_binary PRIVATE ${INCLUDE_DIRS})
+target_compile_definitions(tests PRIVATE "$<$<CONFIG:RELEASE>:NDEBUG>")
+target_include_directories(tests PRIVATE ${INCLUDE_DIRS})
 
+include(CTest)
+include(Catch)
+catch_discover_tests(tests)
