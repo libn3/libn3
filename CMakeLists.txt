@@ -43,6 +43,7 @@ add_definitions(-D_POSIX_C_SOURCE=200809L)
 add_definitions(-D_DEFAULT_SOURCE)
 
 include(ExternalProject)
+include(FetchContent)
 
 set(LIBURING_BASE_ARGS
     GIT_REPOSITORY https://github.com/axboe/liburing
@@ -84,6 +85,11 @@ set_target_properties(liburing_static_lib
     IMPORTED_LOCATION ${SOURCE_DIR}/src/liburing.a
 )
 
+
+
+
+
+
 SET(COMMON
     "src/libn3.cpp"
     "src/epoll.cpp"
@@ -100,6 +106,7 @@ SET(COMMON
     "src/handle.cpp"
     "src/timer_list.cpp"
     "src/io_uring.cpp"
+    "src/ownership.cpp"
     )
 
 SET(COMMON_INCLUDE_DIRS
@@ -116,3 +123,32 @@ target_link_libraries(n3 PRIVATE ${liburing_static_lib})
 
 set_property(TARGET n3 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 set_property(TARGET n3 PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
+
+# TEST CONFIGURATION AND BUILDING
+
+enable_testing()
+
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.5.2
+    GIT_SHALLOW    TRUE
+    GIT_PROGRESS   TRUE
+)
+
+FetchContent_MakeAvailable(Catch2)
+
+set(TEST_SOURCES
+    "test/ownership.h"
+)
+
+add_executable(test_binary ${TEST_SOURCES})
+target_link_libraries(test_binary PRIVATE n3 Catch2::Catch2WithMain)
+
+#target_compile_options(test_binary
+#    PRIVATE ${WARNINGS}
+#    PUBLIC "$<$<CONFIG:DEBUG>:${DEBUG_OPTIONS}>" "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>")
+target_compile_definitions(test_binary PRIVATE "$<$<CONFIG:RELEASE>:NDEBUG>")
+target_include_directories(test_binary PRIVATE ${INCLUDE_DIRS})
+

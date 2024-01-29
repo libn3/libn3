@@ -10,18 +10,6 @@
 
 namespace n3 {
 
-class PageSize {
-    static size_t PAGE_SIZE;
-    static std::once_flag page_size_init_flag;
-
-public:
-    static size_t get() {
-        std::call_once(page_size_init_flag,
-                [&] { PAGE_SIZE = n3::linux::sysconf(_SC_PAGESIZE).value_or(4096); });
-        return PAGE_SIZE;
-    }
-};
-
 OwningBuffer::OwningBuffer() : data{} {
 }
 OwningBuffer::OwningBuffer(std::span<std::byte> init_data) :
