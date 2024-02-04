@@ -17,7 +17,10 @@ io_uring_handle::io_uring_handle() : ring{} {
             | IORING_SETUP_SINGLE_ISSUER | IORING_SETUP_DEFER_TASKRUN);
 
     int ret = io_uring_queue_init_params(IO_URING_SQ_LEN, &*this->ring, &params);
-
+    if (ret != 0) {
+        throw error::get_error_code_from_errno(-ret);
+    }
+    ret = io_uring_register_ring_fd(&*this->ring);
     if (ret != 0) {
         throw error::get_error_code_from_errno(-ret);
     }
