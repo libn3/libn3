@@ -25,12 +25,6 @@ public:
 
     epoll_handle();
     ~epoll_handle() noexcept;
-
-    epoll_handle(const epoll_handle&) = delete;
-    epoll_handle(epoll_handle&&) noexcept = default;
-
-    epoll_handle& operator=(const epoll_handle&) = delete;
-    epoll_handle& operator=(epoll_handle&&) noexcept = default;
 };
 
 class epoll_ctx {

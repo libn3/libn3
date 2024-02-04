@@ -22,17 +22,24 @@ public:
 
     //Move constructible only
     constexpr MoveOnly(const MoveOnly&) = delete;
-    constexpr MoveOnly(MoveOnly&& other) : inner{std::exchange(other.inner, std::nullopt)} {
+    constexpr MoveOnly(MoveOnly&& other) noexcept(noexcept(std::exchange(other.inner, std::nullopt))
+            && std::is_nothrow_move_constructible_v<decltype(inner)>) :
+            inner{std::move(std::exchange(other.inner, std::nullopt))} {
     }
 
     //Move assignable only
     constexpr MoveOnly& operator=(const MoveOnly&) = delete;
-    constexpr MoveOnly& operator=(MoveOnly&& other) {
-        this->inner = std::exchange(other.inner, std::nullopt);
+    constexpr MoveOnly& operator=(MoveOnly&& other) noexcept(
+            noexcept(std::exchange(other.inner, std::nullopt))
+            && std::is_nothrow_move_assignable_v<decltype(inner)>) {
+        this->inner = std::move(std::exchange(other.inner, std::nullopt));
         return *this;
     }
 
     [[nodiscard]] constexpr operator bool() const noexcept {
+        return this->inner.has_value();
+    }
+    [[nodiscard]] constexpr bool has_value() const noexcept {
         return this->inner.has_value();
     }
 

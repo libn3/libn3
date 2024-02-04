@@ -175,16 +175,12 @@ template<typename T = void>
 class OwnedCoroutine {
     using HandleType = std::coroutine_handle<T>;
 
-    HandleType coro;
+    MoveOnly<HandleType> coro;
 
 public:
     OwnedCoroutine() : coro{nullptr} {
     }
     OwnedCoroutine(HandleType&& handle) noexcept : coro{std::move(handle)} {
-    }
-    OwnedCoroutine(const OwnedCoroutine& oc) = delete;
-    OwnedCoroutine(OwnedCoroutine&& oc) noexcept :
-            coro{std::exchange(oc.coro, HandleType::from_address(nullptr))} {
     }
 
     OwnedCoroutine(auto&&...args) noexcept(
@@ -193,14 +189,9 @@ public:
     }
 
     ~OwnedCoroutine() {
-        if (this->coro) {
-            this->coro.destroy();
+        if (this->coro.has_value()) {
+            this->coro->destroy();
         }
-    }
-
-    OwnedCoroutine& operator=(const OwnedCoroutine&) = delete;
-    OwnedCoroutine& operator=(OwnedCoroutine&& oc) noexcept {
-        this->coro = std::exchange(oc.coro, HandleType::from_address(nullptr));
     }
 
     constexpr operator OwnedCoroutine<>() const noexcept {

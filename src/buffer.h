@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "callbacks.h"
+#include "ownership.h"
 
 namespace n3 {
 
