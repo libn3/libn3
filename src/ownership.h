@@ -32,9 +32,17 @@ public:
         return *this;
     }
 
-    [[nodiscard]] constexpr operator bool() noexcept {
+    [[nodiscard]] constexpr operator bool() const noexcept {
         return this->inner.has_value();
     }
+
+    /*
+     * Need the deleted conversion operators to be explicit to resolve overload resolution in
+     * the case that T is implicitly convertable to bool such as "int", otherwise it conflicts
+     * with the bool conversion we define
+     */
+    constexpr explicit operator std::optional<std::decay_t<T>>() = delete;
+    constexpr explicit operator std::decay_t<T>() = delete;
 
     constexpr T *operator->() noexcept {
         return &*this->inner;
