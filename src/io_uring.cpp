@@ -32,4 +32,13 @@ io_uring_handle::~io_uring_handle() {
     }
 }
 
+[[nodiscard]] std::optional<std::reference_wrapper<::io_uring_sqe>> get_sqe(
+        io_uring_handle& handle) noexcept {
+    ::io_uring_sqe *sqep = io_uring_get_sqe(handle.get());
+    if (sqep) {
+        return std::ref(*sqep);
+    }
+    return std::nullopt;
+}
+
 } // namespace n3::linux::io_uring
