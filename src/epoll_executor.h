@@ -1,6 +1,5 @@
 #pragma once
 
-#include <coroutine>
 #include <cstdint>
 #include <exception>
 #include <expected>
@@ -10,6 +9,7 @@
 #include "epoll.h"
 #include "error.h"
 #include "handle.h"
+#include "ownership.h"
 
 namespace n3::linux::epoll {
 
@@ -169,55 +169,6 @@ class EpollEventGenerator {
 
 public:
     EpollEventGenerator() noexcept = default;
-};
-
-template<typename T = void>
-class OwnedCoroutine {
-    using HandleType = std::coroutine_handle<T>;
-
-    MoveOnly<HandleType> coro;
-
-public:
-    OwnedCoroutine() : coro{nullptr} {
-    }
-    OwnedCoroutine(HandleType&& handle) noexcept : coro{std::move(handle)} {
-    }
-
-    OwnedCoroutine(auto&&...args) noexcept(
-            std::is_nothrow_constructible_v<decltype(this->coro), decltype(args)...>) :
-            coro{std::forward<decltype(args)>(args)...} {
-    }
-
-    ~OwnedCoroutine() {
-        if (this->coro.has_value()) {
-            this->coro->destroy();
-        }
-    }
-
-    constexpr operator OwnedCoroutine<>() const noexcept {
-        return auto{std::coroutine_handle<>::from_address(this->coro.address())};
-    }
-
-    [[nodiscard]] constexpr std::strong_ordering operator<=>(const OwnedCoroutine&) const noexcept
-            = default;
-    [[nodiscard]] constexpr std::strong_ordering operator<=>(
-            const std::coroutine_handle<>& other) const noexcept {
-        return this->coro <=> other;
-    }
-
-    [[nodiscard]] bool done() const {
-        return this->coro.done();
-    }
-
-    void resume() const {
-        return this->coro.resume();
-    }
-
-    [[nodiscard]] auto& promise() const
-        requires(!std::is_void_v<T>)
-    {
-        return this->coro.promise();
-    }
 };
 
 class EpollTask {
